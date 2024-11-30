@@ -58,4 +58,4 @@ const getLocation = (request, options) => {
   };
 };
 
-export { getLocation as default };
+export { getLocation };
