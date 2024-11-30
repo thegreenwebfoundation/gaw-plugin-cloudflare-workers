@@ -1,8 +1,8 @@
 # Grid-aware Websites - Cloudflare Workers Plugin
 
-This plugin provides some useful functions that can be used when setting up the [`grid-aware websites`](/README.md) library using [Cloudflare Workers](https://workers.cloudflare.com/).
+This plugin provides some useful functions that can be used when setting up the [`@greenweb/grid-aware websites`](/thegreenwebfoundation/grid-aware-websites/README.md) library using [Cloudflare Workers](https://workers.cloudflare.com/).
 
-After you have installed the `grid-aware-websites` package ([see steps](/README.md#installing-this-library)), you can use this plugin to:
+After you have installed the `@greenweb/grid-aware-websites` package ([see steps](/thegreenwebfoundation/grid-aware-websites/README.md)), you can use this plugin to:
 
 - Fetch the location of a user based on `cf` header values that are sent along in each Cloudflare request.
 
@@ -13,12 +13,12 @@ The code below is a simplified demonstation of how to use this plugin to fetch t
 The worker code below will return the grid data back to the browser in JSON format.
 
 ```js
-import { gridAwarePower } from "grid-aware-websites";
-import { cloudflare } from "grid-aware-websites/plugins/edge";
+import { gridAwarePower } from "@greenweb/grid-aware-websites";
+import { getLocation } from "@greenweb/gaw-plugin-cloudflare-workers";
 
 export default {
   async fetch(request, env, ctx) {
-    const cfData = cloudflare.getLocation(request);
+    const cfData = getLocation(request);
     const { country } = cfData;
 
     const gridData = await gridAwarePower(country, "API_KEY");
@@ -32,11 +32,11 @@ By default, the `getLocation()` function returns the `request.cf.country` header
 
 ```js
 import { gridAwarePower } from "@greenweb/grid-aware-websites";
-import { cloudflare } from "@greenweb/grid-aware-websites/plugins/edge";
+import { getLocation } from "@greenweb/gaw-plugin-cloudflare-workers";
 
 export default {
   async fetch(request, env, ctx) {
-    const cfData = cloudflare.getLocation(request, {
+    const cfData = getLocation(request, {
       mode: "latlon",
     });
 
@@ -48,4 +48,4 @@ export default {
 ```
 
 > [!NOTE]
-> Using latitude and longitude values is not yet supported in the grid-aware-websites package.
+> Using latitude and longitude values is not yet supported in the `@greenweb/grid-aware-websites` package.
