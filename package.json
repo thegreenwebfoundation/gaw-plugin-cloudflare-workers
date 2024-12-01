@@ -10,11 +10,25 @@
     "format": "npm run prettier:fix && npm run lint:fix",
     "test": "vitest"
   },
-  "keywords": [],
   "author": {
     "name": "Fershad Irani",
     "email": "fershad@greenweb.org",
     "url": "https://fershad.com"
+  },
+  "keywords": [
+    "grid-aware",
+    "carbon-aware",
+    "sustainability",
+    "greenweb",
+    "plugin",
+    "cloudflare workers"
+  ],
+  "bugs": {
+    "url": "https://github.com/thegreenwebfoundation/gaw-plugin-cloudflare-workers/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thegreenwebfoundation/gaw-plugin-cloudflare-workers"
   },
   "license": "Apache-2.0",
   "description": "This plugin provides some useful functions that can be used when setting up the Grid-aware Websites library using Cloudflare Workers",
