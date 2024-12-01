@@ -1,6 +1,6 @@
 {
   "name": "@greenweb/gaw-plugin-cloudflare-workers",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "main": "src/index.js",
   "scripts": {
     "lint": "npx eslint .",
