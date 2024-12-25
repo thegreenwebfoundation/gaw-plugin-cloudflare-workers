@@ -1,14 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { getLocation } from ".";
+import { getLocation, CFRequest } from ".";
 
 describe("getLocation", () => {
   it("should return location data when CF data is present", () => {
-    const mockRequest = {
+    const mockRequest: CFRequest = {
       cf: {
         country: "DE",
       },
     };
-
     const result = getLocation(mockRequest);
 
     expect(result).toEqual({
