@@ -101,7 +101,7 @@ async function saveDataToKv(env, key, data, options) {
     expirationTtl = options.expirationTtl;
   }
 
-  await env.GAW_DATA_KV.put(key, data, { expirationTtl });
+  return await env.GAW_DATA_KV.put(key, data, { expirationTtl });
 }
 
 /**
