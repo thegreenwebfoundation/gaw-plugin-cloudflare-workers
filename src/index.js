@@ -55,24 +55,12 @@ function getLocation(request, options) {
  * @param {cloudflareEnv} env Cloudflare environment.
  * @param {string} key The key to save the response under. We recommend using the URL as the key.
  * @param {cloudflareResponse} response The response object to save.
- * @param {kvOptions} [options] Additional options for the function.
+ * @param {kvOptions} [options] Additional options for the function.\
+ * @returns {Promise<void>}
  * @example
  * savePageToKv(env, "https://example.com/page", response);
  */ 
-async function savePageToKv(env, key, response, options) {
-  if (!env || !key || !response) {
-    return {
-      status: "error",
-    };
-  }
-
-  if(!env.GAW_PAGE_KV) {
-    return {
-      status: "error",
-      message: "GAW_PAGE_KV not found in environment. Please create it.",
-    };
-  }
-
+ async function savePageToKv(env, key, response, options) {
   let expirationTtl = 60 * 60 * 24;
 
   if(options?.expirationTtl && typeof options?.expirationTtl === 'number') {
@@ -81,12 +69,10 @@ async function savePageToKv(env, key, response, options) {
 
   try {
     const responseBody = response.body;
-    await env.GAW_PAGE_KV.put(key, responseBody);
-    return; // Return undefined on success
+    await env.GAW_PAGE_KV.put(key, responseBody, { expirationTtl });
+    return Promise.resolve()
   } catch (error) {
-    return {
-      status: "error",
-    };
+    return Promise.reject()
   }
 }
 
@@ -97,19 +83,6 @@ async function savePageToKv(env, key, response, options) {
  * @return {Promise<string | Object | ArrayBuffer | ReadableStream | null>} The response object from the KV store.
  */
 async function fetchPageFromKv(env, key) {
-  if (!env || !key) {
-    return {
-      status: "error",
-    };
-  }
-
-  if(!env.GAW_PAGE_KV) {
-    return {
-      status: "error",
-      message: "GAW_PAGE_KV not found in environment. Please create it.",
-    };
-  }
-
   return await env.GAW_PAGE_KV.get(key);
 }
 

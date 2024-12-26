@@ -20,7 +20,8 @@ export type locationResponse = {
 };
 
 export type cloudflareEnv = {
-  GAW_PAGE_KV: KVNamespace;
+  GAW_PAGE_KV?: KVNamespace;
+  GAW_DATA_KV?: KVNamespace;
 };
 
 export type cloudflareResponse = {
