@@ -1,26 +1,15 @@
-/* This plugin will:
-
-- Get the user country data from the request & return that to be used by the grid-aware-websites plugin
-
-Secondary features:
-
-- Allow developers to opt-in to using Workers KV to save Electricity Maps responses for a specific duration.
-- Allow developers to opt-in to using Workers KV to save the HTML response for a specified duration. Here be dragons though.
-- ✅ Allow lat lon to be returned instead of the country code.
-
-How much should this plugin do? Should it do error handling for requests?
-*/
-
 /**
  * Get the location of the user from the request object.
- * @param {Request} request The incoming request object.
- * @returns {object} The country of the user.
+ * @typedef {import('./types').cloudflareRequest} cloudflareRequest The incoming request object.
+ * @typedef {import('./types').locationOptions} locationOptions Additional options for the function.
+ * @typedef {import('./types').locationResponse} locationResponse The location of the user.
+ * @param {cloudflareRequest} request The incoming request object.
+ * @param {locationOptions} [options] Additional options for the function.
+ * @returns {locationResponse} The location of the user.
  * @example
  * const location = getLocation(request);
- * location = { country: "DE" }
  */
-
-const getLocation = (request, options) => {
+function getLocation(request, options) {
   const mode = options?.mode || "country";
 
   const country = request.cf?.country;
@@ -30,18 +19,13 @@ const getLocation = (request, options) => {
     const lon = request.cf?.longitude;
 
     if (!lat || !lon) {
-      if (!country) {
-        return {
-          status: "error",
-        };
-      }
-
       return {
-        country,
+        status: "error",
       };
     }
 
     return {
+      status: "success",
       lat,
       lon,
     };
@@ -54,8 +38,9 @@ const getLocation = (request, options) => {
   }
 
   return {
+    status: "success",
     country,
   };
-};
+}
 
 export { getLocation };

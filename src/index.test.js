@@ -8,10 +8,10 @@ describe("getLocation", () => {
         country: "DE",
       },
     };
-
     const result = getLocation(mockRequest);
 
     expect(result).toEqual({
+      status: "success",
       country: "DE",
     });
   });
@@ -39,6 +39,7 @@ describe("getLocation", () => {
     const result = getLocation(mockRequest, { mode: "latlon" });
 
     expect(result).toEqual({
+      status: "success",
       lat: 1,
       lon: 2,
     });
@@ -54,6 +55,7 @@ describe("getLocation", () => {
     const result = getLocation(mockRequest);
 
     expect(result).toEqual({
+      status: "success",
       country: "DE",
     });
   });
@@ -65,9 +67,11 @@ describe("getLocation", () => {
       },
     };
 
+    // @ts-ignore
     const result = getLocation(mockRequest, { mode: "invalid" });
 
     expect(result).toEqual({
+      status: "success",
       country: "DE",
     });
   });
