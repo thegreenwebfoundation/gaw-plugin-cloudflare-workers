@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { getLocation, CFRequest } from ".";
+import { getLocation } from ".";
 
 describe("getLocation", () => {
   it("should return location data when CF data is present", () => {
-    const mockRequest: CFRequest = {
+    const mockRequest = {
       cf: {
         country: "DE",
       },
@@ -11,6 +11,7 @@ describe("getLocation", () => {
     const result = getLocation(mockRequest);
 
     expect(result).toEqual({
+      status: "success",
       country: "DE",
     });
   });
@@ -38,6 +39,7 @@ describe("getLocation", () => {
     const result = getLocation(mockRequest, { mode: "latlon" });
 
     expect(result).toEqual({
+      status: "success",
       lat: 1,
       lon: 2,
     });
@@ -53,6 +55,7 @@ describe("getLocation", () => {
     const result = getLocation(mockRequest);
 
     expect(result).toEqual({
+      status: "success",
       country: "DE",
     });
   });
@@ -64,9 +67,11 @@ describe("getLocation", () => {
       },
     };
 
+    // @ts-ignore
     const result = getLocation(mockRequest, { mode: "invalid" });
 
     expect(result).toEqual({
+      status: "success",
       country: "DE",
     });
   });

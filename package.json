@@ -1,8 +1,8 @@
 {
   "name": "@greenweb/gaw-plugin-cloudflare-workers",
   "version": "0.1.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/index.js",
+  "types": "src/types/index.d.ts",
   "scripts": {
     "lint": "npx eslint .",
     "lint:fix": "npm run lint -- --fix",
@@ -10,8 +10,6 @@
     "prettier:fix": "npm run prettier -- --write",
     "format": "npm run prettier:fix && npm run lint:fix",
     "test": "vitest",
-    "build": "tsc",
-    "prepare": "npm run build",
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch"
   },
