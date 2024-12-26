@@ -113,4 +113,32 @@ async function fetchPageFromKv(env, key) {
   return await env.GAW_PAGE_KV.get(key);
 }
 
-export { getLocation, savePageToKv, fetchPageFromKv };
+/**
+ * Save electricity data to a KV store.
+ * @param {cloudflareEnv} env Cloudflare environment
+ * @param {string} key The key to save the response under. We recommend using either the country code or lat-lon values
+ * @param {string | ArrayBuffer | ArrayBufferView | import('@cloudflare/workers-types').ReadableStream} data The data to be saved
+ * @param {kvOptions} [options] Additional options for the function
+ * @return {Promise<void>}
+ */
+async function saveDataToKv(env, key, data, options) {
+  let expirationTtl = 60 * 60; // Default 1 hour
+
+  if(options?.expirationTtl && typeof options?.expirationTtl === 'number') {
+    expirationTtl = options.expirationTtl;
+  }
+
+  await env.GAW_DATA_KV.put(key, data, { expirationTtl });
+}
+
+/**
+ * Fetch electricity data from a KV store.
+ * @param {cloudflareEnv} env Cloudflare environment.
+ * @param {string} key The key to fetch the response for. We recommend using the country code or lat-lon values
+ * @return {Promise<string | Object | ArrayBuffer | ReadableStream | null>}
+ */
+async function fetchDataFromKv(env, key) {
+  return await env.GAW_DATA_KV.get(key);
+}
+
+export { getLocation, savePageToKv, fetchPageFromKv, saveDataToKv, fetchDataFromKv };
