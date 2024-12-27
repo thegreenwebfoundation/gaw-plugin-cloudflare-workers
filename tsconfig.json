@@ -2,10 +2,11 @@
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "outDir": "src/types"
+    "declaration": true,
+    "declarationDir": "src",
+    "emitDeclarationOnly": true,
+    "declarationMap": true,
   },
-  "include": ["src/**/*.ts", "src/**/*.js"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*.js"],
+  "exclude": ["node_modules", "src/**/*.test.js"]
 }
