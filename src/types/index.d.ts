@@ -1,4 +1,4 @@
-import { KVNamespace } from "@cloudflare/workers-types";
+import { KVNamespace, Response as CFResponse } from "@cloudflare/workers-types";
 
 export type locationOptions = {
   mode?: "country" | "latlon";
@@ -34,5 +34,5 @@ export type cloudflareResponse = {
 };
 
 export type kvOptions = {
-  expirationTtl?: number;
+  expirationTtl?: number; // in seconds
 };

@@ -132,10 +132,12 @@ export default {
       }
     }
 
-    // Save the gridData to the KV store. By default, data is cached for 1 hour, but that can be changed.
-    await saveDataToKv(env, country, JSON.stringify(gridData), {
-      expirationTtl: 60 * 60 * 2; // Cache the data for 2 hours instead.
-    })
+    if(gridData.status === "success") {
+      // Save the gridData to the KV store. By default, data is cached for 1 hour, but that can be changed.
+      await saveDataToKv(env, country, JSON.stringify(gridData), {
+        expirationTtl: 60 * 60 * 2; // Cache the data for 2 hours instead.
+      })
+    }
 
     // If the gridAware value is set to true, then let's modify the page
     if (gridData.gridAware) {

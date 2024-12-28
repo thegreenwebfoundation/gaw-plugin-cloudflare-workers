@@ -114,4 +114,5 @@ async function fetchDataFromKv(env, key) {
   return await env.GAW_DATA_KV.get(key);
 }
 
+
 export { getLocation, savePageToKv, fetchPageFromKv, saveDataToKv, fetchDataFromKv };

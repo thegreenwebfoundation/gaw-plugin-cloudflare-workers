@@ -24,12 +24,12 @@ export type cloudflareEnv = import("./types").cloudflareEnv;
 export type kvOptions = import("./types").kvOptions;
 /**
  * Type definitions
- * @typedef {import('./types/types').cloudflareRequest} cloudflareRequest The incoming request object.
- * @typedef {import('./types/types').locationOptions} locationOptions Additional options for the function.
- * @typedef {import('./types/types').locationResponse} locationResponse The location of the user.
- * @typedef {import('./types/types').cloudflareResponse} cloudflareResponse The response object to save.
- * @typedef {import('./types/types').cloudflareEnv} cloudflareEnv Cloudflare environment.
- * @typedef {import('./types/types').kvOptions} kvOptions Additional options for the function.
+ * @typedef {import('./types').cloudflareRequest} cloudflareRequest The incoming request object.
+ * @typedef {import('./types').locationOptions} locationOptions Additional options for the function.
+ * @typedef {import('./types').locationResponse} locationResponse The location of the user.
+ * @typedef {import('./types').cloudflareResponse} cloudflareResponse The response object to save.
+ * @typedef {import('./types').cloudflareEnv} cloudflareEnv Cloudflare environment.
+ * @typedef {import('./types').kvOptions} kvOptions Additional options for the function.
  */
 /**
  * Get the location of the user from the request object.
@@ -39,10 +39,7 @@ export type kvOptions = import("./types").kvOptions;
  * @example
  * const location = getLocation(request);
  */
-export function getLocation(
-  request: cloudflareRequest,
-  options?: locationOptions
-): locationResponse;
+export function getLocation(request: cloudflareRequest, options?: locationOptions): locationResponse;
 /**
  * Save a page response to the KV store.
  * @param {cloudflareEnv} env Cloudflare environment.
@@ -53,22 +50,14 @@ export function getLocation(
  * @example
  * savePageToKv(env, "https://example.com/page", response);
  */
-export function savePageToKv(
-  env: cloudflareEnv,
-  key: string,
-  response: cloudflareResponse,
-  options?: kvOptions
-): Promise<void>;
+export function savePageToKv(env: cloudflareEnv, key: string, response: cloudflareResponse, options?: kvOptions): Promise<void>;
 /**
  * Fetch a page response from the KV store.
  * @param {cloudflareEnv} env Cloudflare environment.
  * @param {string} key The key to fetch the response from. We recommend using the URL as the key.
  * @return {Promise<string | Object | ArrayBuffer | ReadableStream | null>} The response object from the KV store.
  */
-export function fetchPageFromKv(
-  env: cloudflareEnv,
-  key: string
-): Promise<string | any | ArrayBuffer | ReadableStream | null>;
+export function fetchPageFromKv(env: cloudflareEnv, key: string): Promise<string | any | ArrayBuffer | ReadableStream | null>;
 /**
  * Save electricity data to a KV store.
  * @param {cloudflareEnv} env Cloudflare environment
@@ -77,24 +66,12 @@ export function fetchPageFromKv(
  * @param {kvOptions} [options] Additional options for the function
  * @return {Promise<void>}
  */
-export function saveDataToKv(
-  env: cloudflareEnv,
-  key: string,
-  data:
-    | string
-    | ArrayBuffer
-    | ArrayBufferView
-    | import("@cloudflare/workers-types").ReadableStream,
-  options?: kvOptions
-): Promise<void>;
+export function saveDataToKv(env: cloudflareEnv, key: string, data: string | ArrayBuffer | ArrayBufferView | import("@cloudflare/workers-types").ReadableStream, options?: kvOptions): Promise<void>;
 /**
  * Fetch electricity data from a KV store.
  * @param {cloudflareEnv} env Cloudflare environment.
  * @param {string} key The key to fetch the response for. We recommend using the country code or lat-lon values
  * @return {Promise<string | Object | ArrayBuffer | ReadableStream | null>}
  */
-export function fetchDataFromKv(
-  env: cloudflareEnv,
-  key: string
-): Promise<string | any | ArrayBuffer | ReadableStream | null>;
+export function fetchDataFromKv(env: cloudflareEnv, key: string): Promise<string | any | ArrayBuffer | ReadableStream | null>;
 //# sourceMappingURL=index.d.ts.map
