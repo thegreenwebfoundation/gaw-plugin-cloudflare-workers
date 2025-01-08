@@ -56,8 +56,8 @@ export default {
     }
 
     // Otherwise we can get the "latlon" object 
-    const { latlon } = location;
-    return new Response(`The country is ${JSON.stringify(latlon)}.`)
+    const { lat, lon } = location;
+    return new Response(`The country is ${JSON.stringify({lat, lon})}.`)
   },
 };
 ```
