@@ -10,7 +10,7 @@ After you have installed the `@greenweb/grid-aware-websites` package ([see steps
 
 The core functionality of this library is to provide a means for users to fetch user location data from Cloudflare requests, so that data can then be used in the `@greenweb/grid-aware-websites` library.
 
-### Fetch user country (default)
+### Fetch request country (default)
 
 The worker code below will return the grid data back to the browser in JSON format.
 
@@ -35,7 +35,7 @@ export default {
 };
 ```
 
-### Fetch user latlon
+### Fetch request latlon
 
 By default, the `getLocation()` function returns the country of the request. However, it can also be used to return the latitude and longitude values if desired.
 
@@ -45,8 +45,10 @@ import { getLocation } from "@greenweb/gaw-plugin-cloudflare-workers";
 export default {
   async fetch(request, env, ctx) {
 
-    // Use the getLocation function to check for the user's country in the request object
-    const location = getLocation(request);
+    // Use the getLocation function to check for the user's latlon in the request object
+    const location = getLocation(request, {
+      mode: "latlon"
+    });
 
     // If there's an error, process the request as normal
     if (location.status === "error") {
