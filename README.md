@@ -4,7 +4,7 @@ This plugin provides some useful functions that can be used when setting up the 
 
 After you have installed the `@greenweb/grid-aware-websites` package ([see steps](/thegreenwebfoundation/grid-aware-websites/README.md)), you can use this plugin to:
 
-- Fetch the location of a user based on `cf` header values that are sent along in each Cloudflare request.
+- Fetch the location of a user based from the Cloudflare request.
 
 ## Fetching location
 
@@ -19,35 +19,43 @@ import { getLocation } from "@greenweb/gaw-plugin-cloudflare-workers";
 
 export default {
   async fetch(request, env, ctx) {
-    const cfData = getLocation(request);
 
-    if (!status === "error") {
-      const { country } = cfData;
-      // ... other grid-aware websites code.
+    // Use the getLocation function to check for the user's country in the request object
+    const location = getLocation(request);
+
+    // If there's an error, process the request as normal
+    if (location.status === "error") {
+        return new Response('There was an error');
     }
 
+    // Otherwise we can get the "country" variable 
+    const { country } = location;
+    return new Response(`The country is ${country}.`)
   },
 };
 ```
 
 ### Fetch user latlon
 
-By default, the `getLocation()` function returns the `request.cf.country` header. However, it can also be used to return the `request.cf.latitude` and `request.cf.longitude` headers if desired.
+By default, the `getLocation()` function returns the country of the request. However, it can also be used to return the latitude and longitude values if desired.
 
 ```js
 import { getLocation } from "@greenweb/gaw-plugin-cloudflare-workers";
 
 export default {
   async fetch(request, env, ctx) {
-    const cfData = getLocation(request, {
-      mode: "latlon",
-    });
 
-    if (!status === "error") {
-      const { lat, lon } = cfData;
-     // Functionality yet to be built into grid-aware-websites library.
+    // Use the getLocation function to check for the user's country in the request object
+    const location = getLocation(request);
+
+    // If there's an error, process the request as normal
+    if (location.status === "error") {
+        return new Response('There was an error');
     }
 
+    // Otherwise we can get the "latlon" object 
+    const { latlon } = location;
+    return new Response(`The country is ${JSON.stringify(latlon)}.`)
   },
 };
 ```
@@ -115,8 +123,8 @@ export default {
         ...response,
       });
     }
-    const cfData = getLocation(request);
-    const { country } = cfData;
+    const location = getLocation(request);
+    const { country } = location;
 
     // First check if the there's data for the country saved to KV
     let gridData = await fetchDataFromKv(env, country);
