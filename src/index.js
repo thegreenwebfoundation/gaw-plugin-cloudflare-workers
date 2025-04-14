@@ -8,6 +8,8 @@
  * @typedef {import('./types').kvOptions} kvOptions Additional options for the function.
  */
 
+import { HTMLRewriter } from '@cloudflare/workers-types';
+
 /**
  * Get the location of the user from the request object.
  * @param {cloudflareRequest} request The incoming request object.
@@ -114,5 +116,207 @@ async function fetchDataFromKv(env, key) {
   return await env.GAW_DATA_KV.get(key);
 }
 
+// The purpose of this function is to allow for an easier implementation of GAW on Cloudflare.
+// The config contains all the params, and options that the can set
+async function auto(config) {
+  // Config can include
+  // - contentType (default: ['text/html'])
+  // - ignoreRoutes (default: [])
+  // - ignoreGawCookie (default: 'gaw')
+  // - locationType (default: 'country')
+  // - htmlChanges (default: null)
+  // - gawOptions.source: (default: 'electricity maps')
+  // - gawOptions.type: (default: 'power')
+  // - gawOptions.mode: (default: 'low-carbon' || 'limit')
+  // - gawOptions.apiKey (default: '')
+  // - useKV.cacheData (default: false)
+  // - useKV.cachePage (default: false)
+
+  const contentType = config.contentType || ['text/html'];
+  const ignoreRoutes = config.ignoreRoutes || [];
+  const ignoreGawCookie = config.ignoreGawCookie || 'gaw'
+  const htmlChanges = config.htmlChanges || null;
+  const gawOptions = {}
+
+  gawOptions.source = config.gawOptions.source.toLowerCase() || 'electricity maps'
+  gawOptions.type = config.gawOptions.type.toLowerCase() || 'power'
+  
+  if (gawOptions.type === 'power') {
+    gawOptions.mode = config.gawOptions.mode || 'low-carbon';
+  } else if (gawOptions.type === 'carbon') {
+    gawOptions.mode = config.gawOptions.mode || 'limit'
+  }
+
+  gawOptions.apiKey = config.gawOptions.apiKey || ''
+
+
+  // This would be used inside a Cloudflare worker, so we expect the request and evn to be available.
+  const url = request.url;
+  const response = await fetch(request.url);
+  const contentTypeHeader = response.headers.get('content-type');
+
+  // Then check if the request content type is HTML.
+  // If the content is not HTML, then return the response without any changes.
+  if(!contentTypeHeader || !contentType.includes(contentTypeHeader)) {
+    return new Response(response.body, {
+      ...response,
+      headers: {
+        ...response.headers,
+        "Content-Encoding": "gzip",
+      }
+    });
+  }
+
+  // If the route we're working on is on the ignore list, bail out as well
+  ignoreRoutes.forEach(route => {
+    if (url.includes(route)) {
+      return new Response(response.body, {
+        ...response,
+        headers: {
+          ...response.headers,
+          "Content-Encoding": "gzip",
+        }
+      });
+    }
+  });
+
+  // We use a cookie to allow us to manually disable the grid-aware feature.
+  // This is useful for testing purposes. It can also be used to disable the feature for specific users.
+  const requestCookies = request.headers.get('cookie');
+  if (requestCookies && requestCookies.includes('gaw=false')) {
+    return new Response(response.body, {
+      ...response,
+      headers: {
+        ...response.headers,
+        "Content-Encoding": "gzip",
+      }
+    });
+  }
+
+  try {
+    // Get the location of the user
+    const location = await getLocation(request);
+    const { country } = location;
+
+    // If the country data does not exist, then return the response without any changes.
+    if (!country) {
+      return new Response(response.body, {
+        ...response,
+        headers: {
+          ...response.headers,
+          "Content-Encoding": "gzip",
+        }
+      });
+    }
+
+    let gridData = undefined;
+
+    if (config.useKV.cacheData) {
+      // Check if we have have cached grid data for the country
+			gridData = await fetchDataFromKv(env, country);
+    }
+
+    // If no cached data, fetch it using the PowerBreakdown class
+    if (!gridData) {
+      const options = {
+        mode: gawOptions.mode,
+        apiKey: gawOptions.apiKey,
+      }
+
+      if (gawOptions.source === 'electricity maps') {
+        if (gawOptions.source === 'power') {
+          const powerBreakdown = new PowerBreakdown(options);
+          gridData = await powerBreakdown.check(country);
+        } else if (gawOptions.source === 'carbon') {
+          const gridIntensity = new GridIntensity(options);
+          gridData await gridIntensity.check(country);
+        }
+
+        // If there's an error getting data, return the web page without any modifications
+        if (gridData.status === 'error') {
+          // console.log('Error getting grid data', gridData);
+          return new Response(response.body, {
+            ...response,
+            headers: {
+              ...response.headers,
+            },
+          });
+        }
+      }
+
+      if (config.useKV.cacheData) {
+        // Save the fresh data to KV for future use.
+        // By default data is stored for 1 hour.
+        await saveDataToKv(env, country, JSON.stringify(gridData));
+      }
+    } else {
+      // Otherwise we're using cached data, so let's parse that
+      gridData = await JSON.parse(gridData);
+    }
+
+    // If the grid aware flag is triggered (gridAware === true), then we'll return a modified HTML page to the user.
+    if (gridData.gridAware) {
+      if (config.useKV.cachePage) {
+        // First, check if we've already got a cached response for the request URL. We do this using the Cloudflare Workers plugin.
+        const cachedResponse = await fetchPageFromKv(env, request.url);
+        // If there's a cached response, return it with the additional headers.
+        if (cachedResponse) {
+          return new Response(cachedResponse, {
+            ...response,
+            headers: {
+              ...response.headers,				
+              "Content-Encoding": "gzip",
+              "Content-Type": contentTypeHeader,
+            },
+          });
+        }
+      }
+
+      // If there's no cached response, we'll modify the HTML page.
+      let rewriter = new HTMLRewriter()
+      if (htmlChanges) {
+        rewriter = htmlChanges
+      }
+
+      const gawResponse = new Response(rewriter.transform(response).body, {
+        ...response,
+        headers: {
+          ...response.headers,
+          'Content-Type': contentTypeHeader,
+          'Content-Encoding': "gzip"
+        }
+      })
+
+      if (config.useKV.cachePage) {
+        // Store the modified response in the KV for 24 hours
+        // We'll use the Cloudflare Workers plugin to perform this action. The plugin sets an expirationTtl of 24 hours by default, but this can be changed
+        await savePageToKv(env, request.url, gawResponse.clone());
+        return gawResponse;
+      }
+    }
+
+    // If the gridAware value is set to false, then return the response as is.
+    return new Response(response.body, {
+      ...response,
+      headers: {
+        ...response.headers,
+        "Content-Encoding": "gzip",
+      }
+    });
+  } catch (e) {
+
+    // If there's an error getting data, return the web page without any modifications
+    // console.log('Error getting grid data', e);
+    return new Response(response.body, {
+      ...response,
+      headers: {
+        ...response.headers,
+        "Content-Encoding": "gzip",
+      }
+    });
+  }
+}
+
 
 export { getLocation, savePageToKv, fetchPageFromKv, saveDataToKv, fetchDataFromKv };
+export default auto;
