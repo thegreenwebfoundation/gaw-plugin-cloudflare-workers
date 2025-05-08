@@ -130,27 +130,26 @@ async function auto(request, env, ctx, config = {}) {
   // - htmlChanges (default: null)
   // - gawOptions.source: (default: 'electricity maps')
   // - gawOptions.type: (default: 'power')
-  // - gawOptions.mode: (default: 'low-carbon' || 'limit')
   // - gawOptions.apiKey (default: '')
   // - useKV.cacheData (default: false)
   // - useKV.cachePage (default: false)
 
   const contentType = config?.contentType || ['text/html'];
   const ignoreRoutes = config?.ignoreRoutes || [];
-  const ignoreGawCookie = config?.ignoreGawCookie || 'gaw'
+  const ignoreGawCookie = config?.ignoreGawCookie || 'gaw-ignore'
   const htmlChanges = config?.htmlChanges || null;
   const gawOptions = {}
 
-  gawOptions.source = config?.gawOptions?.source?.toLowerCase() || 'electricity maps'
-  gawOptions.type = config?.gawOptions?.type?.toLowerCase() || 'power'
+  gawOptions.source = config?.gawDataSource?.toLowerCase() || 'electricity maps'
+  gawOptions.type = config?.gawDataType?.toLowerCase() || 'power'
   
   if (gawOptions.type === 'power') {
-    gawOptions.mode = config?.gawOptions?.mode || 'low-carbon';
+    gawOptions.mode = 'low-carbon';
   } else if (gawOptions.type === 'carbon') {
-    gawOptions.mode = config?.gawOptions?.mode || 'limit'
+    gawOptions.mode = 'limit'
   }
 
-  gawOptions.apiKey = config?.gawOptions?.apiKey || ''
+  gawOptions.apiKey = config?.gawDataApiKey || ''
 
 
   // This would be used inside a Cloudflare worker, so we expect the request and evn to be available.
@@ -212,7 +211,7 @@ async function auto(request, env, ctx, config = {}) {
   // We use a cookie to allow us to manually disable the grid-aware feature.
   // This is useful for testing purposes. It can also be used to disable the feature for specific users.
   const requestCookies = request.headers.get('cookie');
-  if (requestCookies && requestCookies.includes('gaw=false')) {
+  if (requestCookies && requestCookies.includes(ignoreGawCookie)) {
     return new Response(response.body, {
       ...response,
       headers: {
@@ -242,7 +241,7 @@ async function auto(request, env, ctx, config = {}) {
 
     let gridData = null;
 
-    if (config?.useKV?.cacheData) {
+    if (config?.kvCacheData) {
       // Check if we have have cached grid data for the country
 			gridData = await fetchDataFromKv(env, country);
     }
@@ -280,7 +279,7 @@ async function auto(request, env, ctx, config = {}) {
         }
       }
 
-      if (config?.useKV?.cacheData) {
+      if (config?.kvCacheData) {
         // Save the fresh data to KV for future use.
         // By default data is stored for 1 hour.
         await saveDataToKv(env, country, JSON.stringify(gridData));
@@ -295,7 +294,7 @@ async function auto(request, env, ctx, config = {}) {
 
     // If the grid aware flag is triggered (gridAware === true), then we'll return a modified HTML page to the user.
     if (gridData.gridAware) {
-      if (config?.useKV?.cachePage) {
+      if (config?.kvCachePage) {
         // First, check if we've already got a cached response for the request URL. We do this using the Cloudflare Workers plugin.
         const cachedResponse = await fetchPageFromKv(env, request.url);
         // If there's a cached response, return it with the additional headers.
@@ -341,7 +340,7 @@ async function auto(request, env, ctx, config = {}) {
         },
       })
       
-      if (config?.useKV?.cachePage) {
+      if (config?.kvCachePage) {
         // Store the modified response in the KV for 24 hours
         // We'll use the Cloudflare Workers plugin to perform this action. The plugin sets an expirationTtl of 24 hours by default, but this can be changed
         await savePageToKv(env, request.url, gawResponse.clone());
