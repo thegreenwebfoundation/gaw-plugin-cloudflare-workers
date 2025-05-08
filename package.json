@@ -41,14 +41,17 @@
     "@cloudflare/workers-types": "^4.20241224.0",
     "@eslint/js": "^8.56.0",
     "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "globals": "^15.12.0",
     "prettier": "3.3.3",
     "ts-node": "^10.9.0",
     "typescript": "^5.3.0",
-    "vitest": "^2.1.4",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0"
+    "vitest": "^2.1.4"
+  },
+  "dependencies": {
+    "@greenweb/grid-aware-websites": "^0.3.0"
   }
 }
