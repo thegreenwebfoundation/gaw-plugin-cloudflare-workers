@@ -64,6 +64,13 @@ export default {
 
 ```
 
+### See this in the wild
+
+We use this function on our own Green Web Foundation Grid-aware Websites project page.
+
+- View [the page](https://www.thegreenwebfoundation.org/tools/grid-aware-websites/)
+- View [Cloudflare Workers source code](https://github.com/thegreenwebfoundation/gwf-gaw-cloudflare-worker/blob/main/src/index.js)
+
 ---
 
 ## Advanced
