@@ -55,7 +55,7 @@ export default {
     gawDataApiKey: env.EMAPS_API_KEY,
     htmlChanges: new HTMLRewriter().on('html', {
       element(element) {
-      element.setAttribute('data-grid-aware', 'true');
+        element.setAttribute('data-grid-aware', 'true');
       },
     }),
   });
