@@ -60,15 +60,19 @@ export default {
 
 ```
 
-After you have installed the `@greenweb/grid-aware-websites` package ([see steps](/thegreenwebfoundation/grid-aware-websites/README.md)), you can use this plugin to:
+## Advanced
+
+If you want to have more control over how grid-awareness is applied to your site, you can use this plugin in conjunction with the core [Grid-aware Websites](https://github.com/thegreenwebfoundation/grid-aware-websites) library.
+
+First, install the Grid-aware Websites library ([see steps](/thegreenwebfoundation/grid-aware-websites/README.md)). After you have installed the `@greenweb/grid-aware-websites` package, you can use this plugin to:
 
 - Fetch the location of a user based from the Cloudflare request.
 
-## Fetching location
+### Fetching location
 
 The core functionality of this library is to provide a means for users to fetch user location data from Cloudflare requests, so that data can then be used in the `@greenweb/grid-aware-websites` library.
 
-### Fetch request country (default)
+#### Fetch request country (default)
 
 The worker code below will return the grid data back to the browser in JSON format.
 
@@ -93,7 +97,7 @@ export default {
 };
 ```
 
-### Fetch request latlon
+#### Fetch request latlon
 
 By default, the `getLocation()` function returns the country of the request. However, it can also be used to return the latitude and longitude values if desired.
 
@@ -123,17 +127,17 @@ export default {
 > [!NOTE]
 > Using latitude and longitude values is not yet supported in the `@greenweb/grid-aware-websites` package.
 
-## Additional functionality
+### Additional functionality
 
 In addition to the core functionality, we have included other convenience functions in this library to provide consistent methods for developers to use other Cloudflare features. These aim to help reduce API requests, and return cached page results.
 
-### Cache grid data in Cloudflare Workers KV
+#### Cache grid data in Cloudflare Workers KV
 
 The `@greenweb/grid-aware-websites` library relies on fetching data from third-party APIs to get near-live data about a specific location's energy grid. These requests can have a cost - both in time, and maybe also financially depending on how many we're making.
 
 To reduce the number out outbound calls to third-party data APIs, we can cache results in Cloudflare Workers KV (key-value) stores for a specified period of time. We expose two functions which allow results to be saved to KV and fetched from KV.
 
-#### Data KV Setup
+##### Data KV Setup
 
 To setup saving grid data to Cloudflare Workers KV, you will need to create a KV namespace and bind it to your project. In your Workers project, run the following command and follow the returned instructions to bind the KV namespace to your project.
 
@@ -141,13 +145,13 @@ To setup saving grid data to Cloudflare Workers KV, you will need to create a KV
 npx wrangler kv namespace create GAW_DATA_KV
 ```
 
-### Cache page response in Cloudflare Workers KV
+#### Cache page response in Cloudflare Workers KV
 
 The Grid-aware Websites project encourages developers to return modified pages to users when grid-awareness is applied. These pages should "do less" in terms of running JavaScript and other processor intensive operations.
 
 Rather than generate these modified pages on each request, they can be cached in a KV store for a specified period of time. This reduces the need to recompute these pages, and returns them to the user sooner - even when grid-aware changes are applied.
 
-#### Page KV Setup
+##### Page KV Setup
 
 To setup saving pages to Cloudflare Workers KV, you will need to create a KV namespace and bind it to your project. In your Workers project, run the following command and follow the returned instructions to bind the KV namespace to your project.
 
@@ -155,7 +159,7 @@ To setup saving pages to Cloudflare Workers KV, you will need to create a KV nam
 npx wrangler kv namespace create GAW_PAGE_KV
 ```
 
-## Putting it all together
+### Putting it all together
 
 The below code is an example of a Cloudflare Worker that:
 
