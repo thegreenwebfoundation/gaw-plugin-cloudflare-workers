@@ -2,6 +2,64 @@
 
 This plugin provides some useful functions that can be used when setting up the [`@greenweb/grid-aware websites`](/thegreenwebfoundation/grid-aware-websites/README.md) library using [Cloudflare Workers](https://workers.cloudflare.com/).
 
+## Quickstart
+
+The easiest way to use this plugin is by utilising the `auto` functionality that it provides. As a minimum, you would need to have the below code in your Cloudflare Worker.
+
+```js
+import auto from '@greenweb/gaw-plugin-cloudflare-workers';
+
+export default {
+ async fetch(request, env, ctx) {
+  return auto(request, env, ctx);
+ },
+};
+```
+
+This code will:
+
+1. Get the request location.
+2. Run the grid-aware logic using the `PowerBreakdown` API.
+3. Return the page regardless of the results.
+
+The `auto` function also accepts an options object as the fourth parameter. This allows for some configuration to be made to the implementation. Accepted options values are:
+
+Here's the option formatted as a markdown table:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `contentType` | String[] | `['text/html']` | Defines the content types that should be processed |
+| `ignoreRoutes` | String[] | `[]` | A list of routes where grid-aware code should not be applied |
+| `ignoreGawCookie` | String | `'gaw-ignore'` | A cookie that when present will result in grid-aware code being skipped |
+| `locationType` | String `'country|'latlon'` | `'country'` | Indicates the geolocation data to use for grid-aware checks. |
+| `htmlChanges` | HTMLRewriter | `null` | HTMLRewriter functions which can be used to make adjustments to the page when grid-aware changes need to be appplied. |
+| `gawDataSource` | String | `'electricity maps'` | The data source to use from the core [Grid-aware Websites](https://github.com/thegreenwebfoundation/grid-aware-websites?tab=readme-ov-file#working-with-this-library) library. |
+| `gawDataApiKey` | String | `''` | The API key (if any) for the chosen data source. |
+| `gawDataType` | String | `'power'` | The data type to use from the core Grid-aware Websites library. |
+| `kvCacheData` | Boolean | `false` | Indicate if grid data from the API should be cached in Cloudflare Workers KV for one hour. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv). |
+| `kvCachePage` | Boolean | `false` | Indicates if the modified grid-aware page should be cached in Cloudflare Workers KV for 24 hours. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv) |
+
+The following example will run on all HTML pages, but will skip any routes (URLs) that include the `/company/` or `/profile/` strings. It will use Electricity Maps as the data source, and uses an API key which has been set as an environment secret. IF grid-aware changes need to be applied to the page, a `data-grid-aware=true` attribute will be set on the HTML element.
+
+```js
+import auto from '@greenweb/gaw-plugin-cloudflare-workers';
+
+export default {
+ async fetch(request, env, ctx) {
+  return auto(request, env, ctx, {
+    ignoreRoutes: ['/company/`, `/profile/`],
+    gawDataApiKey: env.EMAPS_API_KEY,
+    htmlChanges: new HTMLRewriter().on('html', {
+      element(element) {
+      element.setAttribute('data-grid-aware', 'true');
+      },
+    }),
+  });
+ },
+};
+
+```
+
 After you have installed the `@greenweb/grid-aware-websites` package ([see steps](/thegreenwebfoundation/grid-aware-websites/README.md)), you can use this plugin to:
 
 - Fetch the location of a user based from the Cloudflare request.
