@@ -60,6 +60,8 @@ export default {
 
 ```
 
+---
+
 ## Advanced
 
 If you want to have more control over how grid-awareness is applied to your site, you can use this plugin in conjunction with the core [Grid-aware Websites](https://github.com/thegreenwebfoundation/grid-aware-websites) library.
