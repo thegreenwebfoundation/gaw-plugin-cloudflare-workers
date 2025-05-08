@@ -6,6 +6,10 @@ This plugin provides some useful functions that can be used when setting up the 
 
 The easiest way to use this plugin is by utilising the `auto` functionality that it provides. As a minimum, you would need to have the below code in your Cloudflare Worker.
 
+Install this library in your project using `npm install @greenweb/gaw-plugin-cloudflare-workers@alpha`.
+
+Replace your Cloudflare Worker with the following code.
+
 ```js
 import auto from '@greenweb/gaw-plugin-cloudflare-workers';
 
