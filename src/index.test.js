@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getLocation, savePageToKv, fetchPageFromKv, fetchDataFromKv, saveDataToKv } from ".";
+import {
+  getLocation,
+  savePageToKv,
+  fetchPageFromKv,
+  fetchDataFromKv,
+  saveDataToKv,
+} from ".";
 import * as exp from "constants";
 
 describe("getLocation", () => {
@@ -32,8 +38,8 @@ describe("getLocation", () => {
   it("should return the lat lon when the options object is set to latlon", () => {
     const mockRequest = {
       cf: {
-        latitude: 1,
-        longitude: 2,
+        latitude: "1",
+        longitude: "2",
       },
     };
 
@@ -41,8 +47,8 @@ describe("getLocation", () => {
 
     expect(result).toEqual({
       status: "success",
-      lat: 1,
-      lon: 2,
+      lat: "1",
+      lon: "2",
     });
   });
 
@@ -84,7 +90,7 @@ describe("savePageToKv", () => {
     status: 200,
     headers: {},
     statusText: "OK",
-    body: "test response body",
+    text: () => Promise.resolve("test response body"),
   };
 
   beforeEach(() => {
@@ -96,43 +102,49 @@ describe("savePageToKv", () => {
   });
 
   it("should successfully save a response to KV with default TTL", async () => {
-    await expect(savePageToKv(mockEnv, "testKey", mockResponse)).resolves.toBeUndefined();
+    await expect(
+      savePageToKv(mockEnv, "testKey", mockResponse),
+    ).resolves.toBeUndefined();
     expect(mockEnv.GAW_PAGE_KV.put).toHaveBeenCalledWith(
-      "testKey", 
-      "test response body", 
-      { expirationTtl: 86400 }
+      "testKey",
+      "test response body",
+      { expirationTtl: 86400 },
     );
   });
 
   it("should save with custom TTL when provided", async () => {
     await expect(
-      savePageToKv(mockEnv, "testKey", mockResponse, { expirationTtl: 3600 })
+      savePageToKv(mockEnv, "testKey", mockResponse, { expirationTtl: 3600 }),
     ).resolves.toBeUndefined();
-    
+
     expect(mockEnv.GAW_PAGE_KV.put).toHaveBeenCalledWith(
-      "testKey", 
-      "test response body", 
-      { expirationTtl: 3600 }
+      "testKey",
+      "test response body",
+      { expirationTtl: 3600 },
     );
   });
 
   it("should use default TTL when provided TTL is not a number", async () => {
     await expect(
       // @ts-expect-error
-      savePageToKv(mockEnv, "testKey", mockResponse, { expirationTtl: "1hour" })
+      savePageToKv(mockEnv, "testKey", mockResponse, {
+        expirationTtl: "1hour",
+      }),
     ).resolves.toBeUndefined();
-    
+
     expect(mockEnv.GAW_PAGE_KV.put).toHaveBeenCalledWith(
-      "testKey", 
-      "test response body", 
-      { expirationTtl: 86400 }
+      "testKey",
+      "test response body",
+      { expirationTtl: 86400 },
     );
   });
 
   it("should reject when KV storage fails", async () => {
     mockEnv.GAW_PAGE_KV.put.mockRejectedValue(new Error("Storage error"));
-    
-    await expect(savePageToKv(mockEnv, "testKey", mockResponse)).rejects.toBeUndefined();
+
+    await expect(
+      savePageToKv(mockEnv, "testKey", mockResponse),
+    ).rejects.toBeUndefined();
   });
 });
 
@@ -149,20 +161,22 @@ describe("fetchPageFromKv", () => {
 
   it("should successfully fetch content from KV", async () => {
     const result = await fetchPageFromKv(mockEnv, "testKey");
-    
+
     expect(mockEnv.GAW_PAGE_KV.get).toHaveBeenCalledWith("testKey");
     expect(result).toBe("stored content");
   });
 
   it("should handle KV fetch errors", async () => {
     mockEnv.GAW_PAGE_KV.get.mockRejectedValue(new Error("Fetch error"));
-    await expect(fetchPageFromKv(mockEnv, "testKey")).rejects.toThrow("Fetch error");
+    await expect(fetchPageFromKv(mockEnv, "testKey")).rejects.toThrow(
+      "Fetch error",
+    );
   });
 
   it("should return null when content is not found", async () => {
     mockEnv.GAW_PAGE_KV.get.mockResolvedValue(null);
     const result = await fetchPageFromKv(mockEnv, "nonexistent");
-    
+
     expect(result).toBeNull();
   });
 
@@ -171,7 +185,7 @@ describe("fetchPageFromKv", () => {
       { input: "string content", expected: "string content" },
       { input: new Uint8Array([1, 2, 3]), expected: new Uint8Array([1, 2, 3]) },
       { input: { foo: "bar" }, expected: { foo: "bar" } },
-      { input: null, expected: null }
+      { input: null, expected: null },
     ];
 
     for (const { input, expected } of testCases) {
@@ -195,20 +209,22 @@ describe("fetchDataFromKv", () => {
 
   it("should successfully fetch data from KV", async () => {
     const result = await fetchDataFromKv(mockEnv, "country-DE");
-    
+
     expect(mockEnv.GAW_DATA_KV.get).toHaveBeenCalledWith("country-DE");
     expect(result).toBe("stored data");
   });
 
   it("should handle KV fetch errors", async () => {
     mockEnv.GAW_DATA_KV.get.mockRejectedValue(new Error("Fetch error"));
-    await expect(fetchDataFromKv(mockEnv, "testKey")).rejects.toThrow("Fetch error");
+    await expect(fetchDataFromKv(mockEnv, "testKey")).rejects.toThrow(
+      "Fetch error",
+    );
   });
 
   it("should return null when data is not found", async () => {
     mockEnv.GAW_DATA_KV.get.mockResolvedValue(null);
     const result = await fetchDataFromKv(mockEnv, "nonexistent");
-    
+
     expect(result).toBeNull();
   });
 
@@ -217,7 +233,7 @@ describe("fetchDataFromKv", () => {
       { input: "string data", expected: "string data" },
       { input: new Uint8Array([1, 2, 3]), expected: new Uint8Array([1, 2, 3]) },
       { input: { value: 123 }, expected: { value: 123 } },
-      { input: null, expected: null }
+      { input: null, expected: null },
     ];
 
     for (const { input, expected } of testCases) {
@@ -229,9 +245,9 @@ describe("fetchDataFromKv", () => {
 
   it("should handle missing KV binding", async () => {
     const mockEnvWithoutKV = {};
-    await expect(fetchDataFromKv(mockEnvWithoutKV, "testKey"))
-      .rejects
-      .toThrow(TypeError);
+    await expect(fetchDataFromKv(mockEnvWithoutKV, "testKey")).rejects.toThrow(
+      TypeError,
+    );
   });
 });
 
@@ -248,24 +264,26 @@ describe("saveDataToKv", () => {
 
   it("should successfully save string data with default TTL", async () => {
     const testData = "test data";
-    await expect(saveDataToKv(mockEnv, "country-DE", testData)).resolves.toBeUndefined();
+    await expect(
+      saveDataToKv(mockEnv, "country-DE", testData),
+    ).resolves.toBeUndefined();
     expect(mockEnv.GAW_DATA_KV.put).toHaveBeenCalledWith(
       "country-DE",
       testData,
-      { expirationTtl: 3600 } // 1 hour default
+      { expirationTtl: 3600 }, // 1 hour default
     );
   });
 
   it("should save with custom TTL when provided", async () => {
     const testData = "test data";
     await expect(
-      saveDataToKv(mockEnv, "country-DE", testData, { expirationTtl: 7200 })
+      saveDataToKv(mockEnv, "country-DE", testData, { expirationTtl: 7200 }),
     ).resolves.toBeUndefined();
-    
+
     expect(mockEnv.GAW_DATA_KV.put).toHaveBeenCalledWith(
       "country-DE",
       testData,
-      { expirationTtl: 7200 }
+      { expirationTtl: 7200 },
     );
   });
 
@@ -279,11 +297,9 @@ describe("saveDataToKv", () => {
 
     for (const data of testCases) {
       await saveDataToKv(mockEnv, "testKey", data);
-      expect(mockEnv.GAW_DATA_KV.put).toHaveBeenCalledWith(
-        "testKey",
-        data,
-        { expirationTtl: 3600 }
-      );
+      expect(mockEnv.GAW_DATA_KV.put).toHaveBeenCalledWith("testKey", data, {
+        expirationTtl: 3600,
+      });
     }
   });
 
@@ -291,29 +307,26 @@ describe("saveDataToKv", () => {
     const testData = "test data";
     await expect(
       // @ts-expect-error
-      saveDataToKv(mockEnv, "testKey", testData, { expirationTtl: "2hours" })
+      saveDataToKv(mockEnv, "testKey", testData, { expirationTtl: "2hours" }),
     ).resolves.toBeUndefined();
-    
-    expect(mockEnv.GAW_DATA_KV.put).toHaveBeenCalledWith(
-      "testKey",
-      testData,
-      { expirationTtl: 3600 }
-    );
+
+    expect(mockEnv.GAW_DATA_KV.put).toHaveBeenCalledWith("testKey", testData, {
+      expirationTtl: 3600,
+    });
   });
 
   it("should handle KV errors", async () => {
     mockEnv.GAW_DATA_KV.put.mockRejectedValue(new Error("Storage error"));
-    await expect(
-      saveDataToKv(mockEnv, "testKey", "test data")
-    ).rejects.toThrow("Storage error");
+    await expect(saveDataToKv(mockEnv, "testKey", "test data")).rejects.toThrow(
+      "Storage error",
+    );
   });
 
   it("should handle missing KV binding", async () => {
     const mockEnvWithoutKV = {};
     await expect(
       // @ts-expect-error
-      saveDataToKv(mockEnvWithoutKV, "testKey", "test data")
+      saveDataToKv(mockEnvWithoutKV, "testKey", "test data"),
     ).rejects.toThrow(TypeError);
   });
 });
-
