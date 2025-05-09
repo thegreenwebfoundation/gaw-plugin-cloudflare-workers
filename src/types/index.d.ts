@@ -13,24 +13,18 @@ export type cloudflareRequest = CFRequest;
 
 export type locationResponse = {
   country?: string;
-  lat?: number;
-  lon?: number;
+  lat?: string;
+  lon?: string;
   status: "success" | "error";
 };
 
 export type cloudflareEnv = {
   GAW_PAGE_KV?: KVNamespace;
   GAW_DATA_KV?: KVNamespace;
+  EMAPS_API_KEY?: string;
 };
 
-export type cloudflareResponse = {
-  status: number;
-  statusText: string;
-  headers: {
-    [key: string]: string;
-  };
-  body: string;
-};
+export type cloudflareResponse = CFResponse;
 
 export type kvOptions = {
   expirationTtl?: number; // in seconds

@@ -5,8 +5,9 @@
     "declaration": true,
     "declarationDir": "src",
     "emitDeclarationOnly": true,
-    "declarationMap": true,
+    "declarationMap": true
   },
   "include": ["src/**/*.js"],
-  "exclude": ["node_modules", "src/**/*.test.js"]
+  "exclude": ["node_modules", "src/**/*.test.js"],
+  "types": ["@cloudflare/workers-types"]
 }
