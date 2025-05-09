@@ -1,5 +1,9 @@
 # Grid-aware Websites - Cloudflare Workers Plugin
 
+> [!NOTE]
+> We're working on simplifying the process of using Grid-aware Websites with Cloudflare Workers by reducing the amount of setup and boilerplate code that needs to be written.
+> To try an alpha version of this, please change to the [`simplify-implementation` branch](https://github.com/thegreenwebfoundation/gaw-plugin-cloudflare-workers/tree/simplify-implementation).
+
 This plugin provides some useful functions that can be used when setting up the [`@greenweb/grid-aware websites`](/thegreenwebfoundation/grid-aware-websites/README.md) library using [Cloudflare Workers](https://workers.cloudflare.com/).
 
 After you have installed the `@greenweb/grid-aware-websites` package ([see steps](/thegreenwebfoundation/grid-aware-websites/README.md)), you can use this plugin to:
@@ -19,18 +23,17 @@ import { getLocation } from "@greenweb/gaw-plugin-cloudflare-workers";
 
 export default {
   async fetch(request, env, ctx) {
-
     // Use the getLocation function to check for the user's country in the request object
     const location = getLocation(request);
 
     // If there's an error, process the request as normal
     if (location.status === "error") {
-        return new Response('There was an error');
+      return new Response("There was an error");
     }
 
-    // Otherwise we can get the "country" variable 
+    // Otherwise we can get the "country" variable
     const { country } = location;
-    return new Response(`The country is ${country}.`)
+    return new Response(`The country is ${country}.`);
   },
 };
 ```
@@ -44,20 +47,19 @@ import { getLocation } from "@greenweb/gaw-plugin-cloudflare-workers";
 
 export default {
   async fetch(request, env, ctx) {
-
     // Use the getLocation function to check for the user's latlon in the request object
     const location = getLocation(request, {
-      mode: "latlon"
+      mode: "latlon",
     });
 
     // If there's an error, process the request as normal
     if (location.status === "error") {
-        return new Response('There was an error');
+      return new Response("There was an error");
     }
 
-    // Otherwise we can get the "latlon" object 
+    // Otherwise we can get the "latlon" object
     const { lat, lon } = location;
-    return new Response(`The country is ${JSON.stringify({lat, lon})}.`)
+    return new Response(`The country is ${JSON.stringify({ lat, lon })}.`);
   },
 };
 ```
@@ -165,7 +167,7 @@ export default {
         });
       }
 
-      // Otherwise, let's modify the page using HTMLRewriter. 
+      // Otherwise, let's modify the page using HTMLRewriter.
       // In this example, we just add a "grid-aware" class to the body tag.
       let gridAwarePage = response
       const modifyHTML = new HTMLRewriter().on('body', {
