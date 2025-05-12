@@ -4,19 +4,19 @@ This plugin provides some useful functions that can be used when setting up the 
 
 ## Quickstart
 
-The easiest way to use this plugin is by utilising the `auto` functionality that it provides. As a minimum, you would need to have the below code in your Cloudflare Worker.
+The easiest way to use this plugin is by utilising the `gridAwareAuto` functionality that it provides. As a minimum, you would need to have the below code in your Cloudflare Worker.
 
 Install this library in your project using `npm install @greenweb/gaw-plugin-cloudflare-workers@alpha`.
 
 Replace your Cloudflare Worker with the following code.
 
 ```js
-import auto from '@greenweb/gaw-plugin-cloudflare-workers';
+import gridAwareAuto from "@greenweb/gaw-plugin-cloudflare-workers";
 
 export default {
- async fetch(request, env, ctx) {
-  return auto(request, env, ctx);
- },
+  async fetch(request, env, ctx) {
+    return gridAwareAuto(request, env, ctx);
+  },
 };
 ```
 
@@ -26,7 +26,7 @@ This code will:
 2. Run the grid-aware logic using the `PowerBreakdown` API.
 3. Return the page regardless of the results.
 
-The `auto` function also accepts an options object as the fourth parameter. This allows for some configuration to be made to the implementation. Accepted options values are:
+The `gridAwareAuto` function also accepts an options object as the fourth parameter. This allows for some configuration to be made to the implementation. Accepted options values are:
 
 Here's the option formatted as a markdown table:
 
@@ -46,13 +46,16 @@ Here's the option formatted as a markdown table:
 The following example will run on all HTML pages, but will skip any routes (URLs) that include the `/company/` or `/profile/` strings. It will use Electricity Maps as the data source, and uses an API key which has been set as an environment secret. IF grid-aware changes need to be applied to the page, a `data-grid-aware=true` attribute will be set on the HTML element.
 
 ```js
-import auto from '@greenweb/gaw-plugin-cloudflare-workers';
+import gridAwareAuto from '@greenweb/gaw-plugin-cloudflare-workers';
 
 export default {
  async fetch(request, env, ctx) {
-  return auto(request, env, ctx, {
+  return gridAwareAuto(request, env, ctx, {
+    // Ignore these routes
     ignoreRoutes: ['/company/`, `/profile/`],
+    // Use this API key that has been saved as a secret
     gawDataApiKey: env.EMAPS_API_KEY,
+    // Make these changes to the web page using HTMLRewriter
     htmlChanges: new HTMLRewriter().on('html', {
       element(element) {
         element.setAttribute('data-grid-aware', 'true');
@@ -94,18 +97,17 @@ import { getLocation } from "@greenweb/gaw-plugin-cloudflare-workers";
 
 export default {
   async fetch(request, env, ctx) {
-
     // Use the getLocation function to check for the user's country in the request object
     const location = getLocation(request);
 
     // If there's an error, process the request as normal
     if (location.status === "error") {
-        return new Response('There was an error');
+      return new Response("There was an error");
     }
 
-    // Otherwise we can get the "country" variable 
+    // Otherwise we can get the "country" variable
     const { country } = location;
-    return new Response(`The country is ${country}.`)
+    return new Response(`The country is ${country}.`);
   },
 };
 ```
@@ -119,20 +121,19 @@ import { getLocation } from "@greenweb/gaw-plugin-cloudflare-workers";
 
 export default {
   async fetch(request, env, ctx) {
-
     // Use the getLocation function to check for the user's latlon in the request object
     const location = getLocation(request, {
-      mode: "latlon"
+      mode: "latlon",
     });
 
     // If there's an error, process the request as normal
     if (location.status === "error") {
-        return new Response('There was an error');
+      return new Response("There was an error");
     }
 
-    // Otherwise we can get the "latlon" object 
+    // Otherwise we can get the "latlon" object
     const { lat, lon } = location;
-    return new Response(`The country is ${JSON.stringify({lat, lon})}.`)
+    return new Response(`The country is ${JSON.stringify({ lat, lon })}.`);
   },
 };
 ```
@@ -240,7 +241,7 @@ export default {
         });
       }
 
-      // Otherwise, let's modify the page using HTMLRewriter. 
+      // Otherwise, let's modify the page using HTMLRewriter.
       // In this example, we just add a "grid-aware" class to the body tag.
       let gridAwarePage = response
       const modifyHTML = new HTMLRewriter().on('body', {
