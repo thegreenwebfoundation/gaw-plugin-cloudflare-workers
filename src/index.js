@@ -136,10 +136,10 @@ async function fetchDataFromKv(env, key) {
  * @param {string[]} [config.contentType=['text/html']] - Content types to process.
  * @param {string[]} [config.ignoreRoutes=[]] - Routes to exclude from GAW processing.
  * @param {string} [config.ignoreGawCookie='gaw'] - Cookie name to disable GAW for specific users.
- * @param {string} [config.locationType='country'] - Type of location data to use.
+ * @param {"country"|"latlon"} [config.locationType='country'] - Type of location data to use.
  * @param {Object} [config.htmlChanges=null] - Custom HTML rewriter for page modifications.
- * @param {string} [config.gawDataSource='electricity maps'] - Data source for grid information.
- * @param {string} [config.gawDataType='power'] - Type of grid data to fetch ('power' or 'carbon').
+ * @param {"electricity maps"} [config.gawDataSource='electricity maps'] - Data source for grid information.
+ * @param {"power"|"carbon"} [config.gawDataType='power'] - Type of grid data to fetch ('power' or 'carbon').
  * @param {string} [config.gawDataApiKey=''] - API key for the data source.
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
