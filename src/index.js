@@ -158,88 +158,40 @@ async function fetchDataFromKv(env, key) {
  * };
  */
 async function auto(request, env, ctx, config = {}) {
-  const contentType = config?.contentType || ["text/html"];
-  const ignoreRoutes = config?.ignoreRoutes || [];
-  const ignoreGawCookie = config?.ignoreGawCookie || "gaw-ignore";
-  const htmlChanges = config?.htmlChanges || null;
-  const debug = config?.debug || "none";
-  const gawOptions = {};
+  try {
+    const contentType = config?.contentType || ["text/html"];
+    const ignoreRoutes = config?.ignoreRoutes || [];
+    const ignoreGawCookie = config?.ignoreGawCookie || "gaw-ignore";
+    const htmlChanges = config?.htmlChanges || null;
+    const debug = config?.debug || "none";
+    const gawOptions = {};
 
-  gawOptions.source =
-    config?.gawDataSource?.toLowerCase() || "electricity maps";
-  gawOptions.type = config?.gawDataType?.toLowerCase() || "power";
+    gawOptions.source =
+      config?.gawDataSource?.toLowerCase() || "electricity maps";
+    gawOptions.type = config?.gawDataType?.toLowerCase() || "power";
 
-  if (gawOptions.type === "power") {
-    gawOptions.mode = "renewable";
-  } else if (gawOptions.type === "carbon") {
-    gawOptions.mode = "average";
-  }
-
-  gawOptions.apiKey = config?.gawDataApiKey || "";
-
-  // This would be used inside a Cloudflare worker, so we expect the request and evn to be available.
-  const url = request.url;
-  const response = await fetch(request.url);
-  const contentTypeHeader = response.headers.get("content-type");
-
-  let debugHeaders = {};
-
-  // console.log({config, gawOptions})
-
-  // Then check if the request content type is HTML.
-  // If the content is not HTML, then return the response without any changes.
-  if (!contentTypeHeader) {
-    if (debug === "full" || debug === "headers") {
-      debugHeaders = { "gaw-applied": "no-content-type" };
-    }
-    return new Response(response.body, {
-      ...response,
-      headers: {
-        ...response.headers,
-        "Content-Encoding": "gzip",
-        ...debugHeaders,
-      },
-    });
-  }
-
-  // Check if the content type is in the list of content types to modify
-  const isContentTypeValid = contentType.some((type) =>
-    contentTypeHeader.toLowerCase().includes(type.toLowerCase()),
-  );
-
-  // console.log(url, 'Content type header', contentTypeHeader, contentType, 'isContentTypeValid', isContentTypeValid);
-
-  if (!isContentTypeValid) {
-    if (debug === "full" || debug === "logs") {
-      // If none of the content types match, return the response without changes.
-      console.log(
-        "Content type is not in the list, returning response as is",
-        url,
-        contentTypeHeader,
-        contentType,
-      );
+    if (gawOptions.type === "power") {
+      gawOptions.mode = "renewable";
+    } else if (gawOptions.type === "carbon") {
+      gawOptions.mode = "average";
     }
 
-    if (debug === "full" || debug === "headers") {
-      debugHeaders = { "gaw-applied": "skip-content-type" };
-    }
+    gawOptions.apiKey = config?.gawDataApiKey || "";
 
-    return new Response(response.body, {
-      ...response,
-      headers: {
-        ...response.headers,
-        "Content-Type": contentTypeHeader,
-        "Content-Encoding": "gzip",
-        ...debugHeaders,
-      },
-    });
-  }
+    // This would be used inside a Cloudflare worker, so we expect the request and evn to be available.
+    const url = request.url;
+    const response = await fetch(request.url);
+    const contentTypeHeader = response.headers.get("content-type");
 
-  // If the route we're working on is on the ignore list, bail out as well
-  ignoreRoutes.forEach((route) => {
-    if (url.includes(route)) {
+    let debugHeaders = {};
+
+    // console.log({config, gawOptions})
+
+    // Then check if the request content type is HTML.
+    // If the content is not HTML, then return the response without any changes.
+    if (!contentTypeHeader) {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { "gaw-applied": "skip-route" };
+        debugHeaders = { "gaw-applied": "no-content-type" };
       }
       return new Response(response.body, {
         ...response,
@@ -250,26 +202,74 @@ async function auto(request, env, ctx, config = {}) {
         },
       });
     }
-  });
 
-  // We use a cookie to allow us to manually disable the grid-aware feature.
-  // This is useful for testing purposes. It can also be used to disable the feature for specific users.
-  const requestCookies = request.headers.get("cookie");
-  if (requestCookies && requestCookies.includes(ignoreGawCookie)) {
-    if (debug === "full" || debug === "headers") {
-      debugHeaders = { "gaw-applied": "skip-cookie" };
+    // Check if the content type is in the list of content types to modify
+    const isContentTypeValid = contentType.some((type) =>
+      contentTypeHeader.toLowerCase().includes(type.toLowerCase()),
+    );
+
+    // console.log(url, 'Content type header', contentTypeHeader, contentType, 'isContentTypeValid', isContentTypeValid);
+
+    if (!isContentTypeValid) {
+      if (debug === "full" || debug === "logs") {
+        // If none of the content types match, return the response without changes.
+        console.log(
+          "Content type is not in the list, returning response as is",
+          url,
+          contentTypeHeader,
+          contentType,
+        );
+      }
+
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { "gaw-applied": "skip-content-type" };
+      }
+
+      return new Response(response.body, {
+        ...response,
+        headers: {
+          ...response.headers,
+          "Content-Type": contentTypeHeader,
+          "Content-Encoding": "gzip",
+          ...debugHeaders,
+        },
+      });
     }
-    return new Response(response.body, {
-      ...response,
-      headers: {
-        ...response.headers,
-        "Content-Encoding": "gzip",
-        ...debugHeaders,
-      },
-    });
-  }
 
-  try {
+    // If the route we're working on is on the ignore list, bail out as well
+    ignoreRoutes.forEach((route) => {
+      if (url.includes(route)) {
+        if (debug === "full" || debug === "headers") {
+          debugHeaders = { "gaw-applied": "skip-route" };
+        }
+        return new Response(response.body, {
+          ...response,
+          headers: {
+            ...response.headers,
+            "Content-Encoding": "gzip",
+            ...debugHeaders,
+          },
+        });
+      }
+    });
+
+    // We use a cookie to allow us to manually disable the grid-aware feature.
+    // This is useful for testing purposes. It can also be used to disable the feature for specific users.
+    const requestCookies = request.headers.get("cookie");
+    if (requestCookies && requestCookies.includes(ignoreGawCookie)) {
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { "gaw-applied": "skip-cookie" };
+      }
+      return new Response(response.body, {
+        ...response,
+        headers: {
+          ...response.headers,
+          "Content-Encoding": "gzip",
+          ...debugHeaders,
+        },
+      });
+    }
+
     // Get the location of the user
     const location = await getLocation(request);
     const { country } = location;
