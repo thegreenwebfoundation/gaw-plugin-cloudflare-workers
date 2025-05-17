@@ -143,6 +143,7 @@ async function fetchDataFromKv(env, key) {
  * @param {string} [config.gawDataApiKey=''] - API key for the data source.
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
+ * @param {boolean} [config.debug=false] - Activates debug mode which outputs logs and returns additional response headers.
  * @returns {Promise<Response>} A modified or unmodified response based on grid data and configuration.
  * @example
  * // Basic usage in a Cloudflare Worker
@@ -161,6 +162,7 @@ async function auto(request, env, ctx, config = {}) {
   const ignoreRoutes = config?.ignoreRoutes || [];
   const ignoreGawCookie = config?.ignoreGawCookie || "gaw-ignore";
   const htmlChanges = config?.htmlChanges || null;
+  const debug = config?.debug || false;
   const gawOptions = {};
 
   gawOptions.source =
@@ -185,12 +187,13 @@ async function auto(request, env, ctx, config = {}) {
   // Then check if the request content type is HTML.
   // If the content is not HTML, then return the response without any changes.
   if (!contentTypeHeader) {
+    const debugHeaders = debug ? { "gaw-applied": "no-content-type" } : {};
     return new Response(response.body, {
       ...response,
       headers: {
         ...response.headers,
         "Content-Encoding": "gzip",
-        "gaw-applied": "no-content-type",
+        ...debugHeaders,
       },
     });
   }
@@ -203,20 +206,25 @@ async function auto(request, env, ctx, config = {}) {
   // console.log(url, 'Content type header', contentTypeHeader, contentType, 'isContentTypeValid', isContentTypeValid);
 
   if (!isContentTypeValid) {
-    // If none of the content types match, return the response without changes.
-    console.log(
-      "Content type is not in the list, returning response as is",
-      url,
-      contentTypeHeader,
-      contentType,
-    );
+    if (debug) {
+      // If none of the content types match, return the response without changes.
+      console.log(
+        "Content type is not in the list, returning response as is",
+        url,
+        contentTypeHeader,
+        contentType,
+      );
+    }
+
+    const debugHeaders = debug ? { "gaw-applied": "skip-content-type" } : {};
+
     return new Response(response.body, {
       ...response,
       headers: {
         ...response.headers,
         "Content-Type": contentTypeHeader,
         "Content-Encoding": "gzip",
-        "gaw-applied": "skip-content-type",
+        ...debugHeaders,
       },
     });
   }
@@ -224,12 +232,13 @@ async function auto(request, env, ctx, config = {}) {
   // If the route we're working on is on the ignore list, bail out as well
   ignoreRoutes.forEach((route) => {
     if (url.includes(route)) {
+      const debugHeaders = debug ? { "gaw-applied": "skip-route" } : {};
       return new Response(response.body, {
         ...response,
         headers: {
           ...response.headers,
           "Content-Encoding": "gzip",
-          "gaw-applied": "skip-route",
+          ...debugHeaders,
         },
       });
     }
@@ -239,12 +248,13 @@ async function auto(request, env, ctx, config = {}) {
   // This is useful for testing purposes. It can also be used to disable the feature for specific users.
   const requestCookies = request.headers.get("cookie");
   if (requestCookies && requestCookies.includes(ignoreGawCookie)) {
+    const debugHeaders = debug ? { "gaw-applied": "skip-cookie" } : {};
     return new Response(response.body, {
       ...response,
       headers: {
         ...response.headers,
         "Content-Encoding": "gzip",
-        "gaw-applied": "skip-cookie",
+        ...debugHeaders,
       },
     });
   }
@@ -256,12 +266,13 @@ async function auto(request, env, ctx, config = {}) {
 
     // If the country data does not exist, then return the response without any changes.
     if (!country) {
+      const debugHeaders = debug ? { "gaw-applied": "no-cf-country" } : {};
       return new Response(response.body, {
         ...response,
         headers: {
           ...response.headers,
           "Content-Encoding": "gzip",
-          "gaw-applied": "no-country",
+          ...debugHeaders,
         },
       });
     }
@@ -271,10 +282,18 @@ async function auto(request, env, ctx, config = {}) {
     if (config?.kvCacheData) {
       // Check if we have have cached grid data for the country
       gridData = await fetchDataFromKv(env, country);
+
+      if (debug) {
+        console.log("Using data from KV");
+      }
     }
 
     // If no cached data, fetch it using the PowerBreakdown class
     if (!gridData) {
+      if (debug) {
+        console.log("Using data from API");
+      }
+
       const options = {
         mode: gawOptions.mode,
         apiKey: env.EMAPS_API_KEY || gawOptions.apiKey,
@@ -294,13 +313,20 @@ async function auto(request, env, ctx, config = {}) {
 
         // If there's an error getting data, return the web page without any modifications
         if (gridData?.status === "error") {
-          // console.log('Error getting grid data', gridData);
+          const debugHeaders = debug
+            ? { "gaw-applied": "error-grid-data" }
+            : {};
+
+          if (debug) {
+            console.log("Error getting grid data", gridData);
+          }
+
           return new Response(response.body, {
             ...response,
             headers: {
               ...response.headers,
               "Content-Encoding": "gzip",
-              "gaw-applied": "error-grid-data",
+              ...debugHeaders,
             },
           });
         }
@@ -316,53 +342,57 @@ async function auto(request, env, ctx, config = {}) {
       gridData = await JSON.parse(gridData);
     }
 
-    // console.log('Grid data', gridData, gridData.gridAware);
-
     // If the grid aware flag is triggered (gridAware === true), then we'll return a modified HTML page to the user.
     if (gridData.gridAware) {
+      const debugHeaders = debug
+        ? {
+            "gaw-applied": "auto",
+            "gaw-grid-data": JSON.stringify(gridData),
+            "gaw-location": JSON.stringify(location),
+          }
+        : {};
+
       if (config?.kvCachePage) {
         // First, check if we've already got a cached response for the request URL. We do this using the Cloudflare Workers plugin.
         const cachedResponse = await fetchPageFromKv(env, request.url);
         // If there's a cached response, return it with the additional headers.
+        if (debug) {
+          console.log("Using cached page from KV");
+        }
+
         if (cachedResponse) {
           return new Response(cachedResponse, {
             ...response,
             headers: {
               ...response.headers,
-              "gaw-applied": "auto",
               "Content-Encoding": "gzip",
               "Content-Type": contentTypeHeader,
-              "gaw-grid-data": JSON.stringify(gridData),
-              "gaw-location": JSON.stringify(location),
+              ...debugHeaders,
             },
           });
         }
       }
 
       // If there's no cached response, we'll modify the HTML page.
-      // let rewriter = new HTMLRewriter().on('body', {
-      //   element(element) {
-      //     // This is where we can modify the HTML page. For now, we'll just add a comment to the body.
-      //     element.append(`<!-- Grid Aware Webpage -->`, { html: true });
-      //   }
-      // });
       let rewriter = null;
       if (htmlChanges) {
         rewriter = htmlChanges;
       }
 
       if (rewriter) {
+        if (debug) {
+          console.log("Using HTMLRewriter");
+        }
+
         const gawResponse = new Response(
           rewriter.transform(response.clone()).body,
           {
             ...response,
             headers: {
               ...response.headers,
-              "gaw-applied": "auto",
               "Content-Type": contentTypeHeader,
               "Content-Encoding": "gzip",
-              "gaw-grid-data": JSON.stringify(gridData),
-              "gaw-location": JSON.stringify(location),
+              ...debugHeaders,
             },
           },
         );
@@ -379,25 +409,28 @@ async function auto(request, env, ctx, config = {}) {
       }
     }
 
+    const debugHeaders = debug ? { "gaw-applied": "no-grid-aware" } : {};
+
     // If the gridAware value is set to false, then return the response as is.
     return new Response(response.clone().body, {
       ...response,
       headers: {
         ...response.headers,
         "Content-Encoding": "gzip",
-        "gaw-applied": "no-grid-aware",
+        ...debugHeaders,
       },
     });
   } catch (e) {
-    console.log("Error in auto function", e);
+    console.log("Error in grid-aware auto function", e);
     // If there's an error getting data, return the web page without any modifications
     // console.log('Error getting grid data', e);
+    const debugHeaders = debug ? { "gaw-applied": "error-failed" } : {};
     return new Response(response.clone().clone().body, {
       ...response,
       headers: {
         ...response.headers,
         "Content-Encoding": "gzip",
-        "gaw-applied": "error-failed",
+        ...debugHeaders,
       },
     });
   }
