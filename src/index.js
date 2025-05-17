@@ -168,9 +168,9 @@ async function auto(request, env, ctx, config = {}) {
   gawOptions.type = config?.gawDataType?.toLowerCase() || "power";
 
   if (gawOptions.type === "power") {
-    gawOptions.mode = "low-carbon";
+    gawOptions.mode = "renewable";
   } else if (gawOptions.type === "carbon") {
-    gawOptions.mode = "limit";
+    gawOptions.mode = "average";
   }
 
   gawOptions.apiKey = config?.gawDataApiKey || "";
