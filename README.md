@@ -30,18 +30,19 @@ The `gridAwareAuto` function also accepts an options object as the fourth parame
 
 Here's the option formatted as a markdown table:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `contentType` | String[] | `['text/html']` | Defines the content types that should be processed |
-| `ignoreRoutes` | String[] | `[]` | A list of routes where grid-aware code should not be applied |
-| `ignoreGawCookie` | String | `'gaw-ignore'` | A cookie that when present will result in grid-aware code being skipped |
-| `locationType` | String `'country|'latlon'` | `'country'` | Indicates the geolocation data to use for grid-aware checks. |
-| `htmlChanges` | HTMLRewriter | `null` | HTMLRewriter functions which can be used to make adjustments to the page when grid-aware changes need to be appplied. |
-| `gawDataSource` | String | `'electricity maps'` | The data source to use from the core [Grid-aware Websites](https://github.com/thegreenwebfoundation/grid-aware-websites?tab=readme-ov-file#working-with-this-library) library. |
-| `gawDataApiKey` | String | `''` | The API key (if any) for the chosen data source. |
-| `gawDataType` | String | `'power'` | The data type to use from the core Grid-aware Websites library. |
-| `kvCacheData` | Boolean | `false` | Indicate if grid data from the API should be cached in Cloudflare Workers KV for one hour. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv). |
-| `kvCachePage` | Boolean | `false` | Indicates if the modified grid-aware page should be cached in Cloudflare Workers KV for 24 hours. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv) |
+| Option            | Type         | Default              | Possible values                      | Description                                                                                                                                                                    |
+| ----------------- | ------------ | -------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `contentType`     | String[]     | `['text/html']`      | Example: ['text/html', 'text/css']   | Defines the content types that should be processed                                                                                                                             |
+| `ignoreRoutes`    | String[]     | `[]`                 | Example: ['/wp-admin', '/assets/js'] | A list of routes where grid-aware code should not be applied                                                                                                                   |
+| `ignoreGawCookie` | String       | `'gaw-ignore'`       | "gaw-ignore"                         | A cookie that when present will result in grid-aware code being skipped                                                                                                        |
+| `locationType`    | String       | `'country'`          | "country", "latlon"                  | Indicates the geolocation data to use for grid-aware checks.                                                                                                                   |
+| `htmlChanges`     | HTMLRewriter | `null`               | See code example below               | HTMLRewriter functions which can be used to make adjustments to the page when grid-aware changes need to be appplied.                                                          |
+| `gawDataSource`   | String       | `'electricity maps'` | "electricity maps"                   | The data source to use from the core [Grid-aware Websites](https://github.com/thegreenwebfoundation/grid-aware-websites?tab=readme-ov-file#working-with-this-library) library. |
+| `gawDataApiKey`   | String       | `''`                 | "xyz123"                             | The API key (if any) for the chosen data source.                                                                                                                               |
+| `gawDataType`     | String       | `'power'`            | "power", "carbon"                    | The data type to use from the core Grid-aware Websites library.                                                                                                                |
+| `kvCacheData`     | Boolean      | `false`              | true, false                          | Indicate if grid data from the API should be cached in Cloudflare Workers KV for one hour. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv).               |
+| `kvCachePage`     | Boolean      | `false`              | true, false                          | Indicates if the modified grid-aware page should be cached in Cloudflare Workers KV for 24 hours. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv)         |
+| `debug`           | String       | "none"               | "none", "full", "headers", "logs"    | Activates debug mode which outputs logs and returns additional response headers.                                                                                               |
 
 The following example will run on all HTML pages, but will skip any routes (URLs) that include the `/company/` or `/profile/` strings. It will use Electricity Maps as the data source, and uses an API key which has been set as an environment secret. IF grid-aware changes need to be applied to the page, a `data-grid-aware=true` attribute will be set on the HTML element.
 
