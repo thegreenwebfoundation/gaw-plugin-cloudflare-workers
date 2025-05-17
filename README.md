@@ -28,8 +28,6 @@ This code will:
 
 The `gridAwareAuto` function also accepts an options object as the fourth parameter. This allows for some configuration to be made to the implementation. Accepted options values are:
 
-Here's the option formatted as a markdown table:
-
 | Option            | Type         | Default              | Possible values                      | Description                                                                                                                                                                    |
 | ----------------- | ------------ | -------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `contentType`     | String[]     | `['text/html']`      | Example: ['text/html', 'text/css']   | Defines the content types that should be processed                                                                                                                             |
