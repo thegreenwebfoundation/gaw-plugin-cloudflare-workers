@@ -81,7 +81,7 @@ async function savePageToKv(env, key, response, options) {
     const responseBody = await response.text();
     await env.GAW_PAGE_KV.put(key, responseBody, { expirationTtl });
     return Promise.resolve();
-  } catch (error) {
+  } catch {
     return Promise.reject();
   }
 }
