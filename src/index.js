@@ -159,14 +159,15 @@ async function fetchDataFromKv(env, key) {
  * };
  */
 async function auto(request, env, ctx, config = {}) {
+  const debug = config?.debug || "none";
+  let debugHeaders = {};
+
   try {
     const contentType = config?.contentType || ["text/html"];
     const ignoreRoutes = config?.ignoreRoutes || [];
     const ignoreGawCookie = config?.ignoreGawCookie || "gaw-ignore";
     const htmlChanges = config?.htmlChanges || null;
-    const debug = config?.debug || "none";
     const gawOptions = {};
-
     gawOptions.source =
       config?.gawDataSource?.toLowerCase() || "electricity maps";
     gawOptions.type = config?.gawDataType?.toLowerCase() || "power";
@@ -191,8 +192,6 @@ async function auto(request, env, ctx, config = {}) {
 
     const response = await fetch(request.url);
     const contentTypeHeader = response.headers.get("content-type");
-
-    let debugHeaders = {};
 
     // console.log({config, gawOptions})
 
@@ -433,10 +432,11 @@ async function auto(request, env, ctx, config = {}) {
     if (debug === "full" || debug === "headers") {
       debugHeaders = { "gaw-applied": "error-failed" };
     }
-    return new Response(response.clone().clone().body, {
-      ...response,
+    const errorResponse = await fetch(request);
+    return new Response(errorResponse.body, {
+      ...errorResponse,
       headers: {
-        ...response.headers,
+        ...errorResponse.headers,
         "Content-Encoding": "gzip",
         ...debugHeaders,
       },
