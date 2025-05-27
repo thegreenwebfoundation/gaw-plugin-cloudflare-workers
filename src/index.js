@@ -1,4 +1,5 @@
 import { PowerBreakdown, GridIntensity } from "@greenweb/grid-aware-websites";
+import { fetch } from "@cloudflare/workers-types";
 
 /**
  * Type definitions
@@ -180,6 +181,14 @@ async function auto(request, env, ctx, config = {}) {
 
     // This would be used inside a Cloudflare worker, so we expect the request and evn to be available.
     const url = request.url;
+
+    // If the route we're working on is on the ignore list, bail out as well
+    ignoreRoutes.forEach((route) => {
+      if (url.includes(route)) {
+        return fetch(request);
+      }
+    });
+
     const response = await fetch(request.url);
     const contentTypeHeader = response.headers.get("content-type");
 
@@ -235,23 +244,6 @@ async function auto(request, env, ctx, config = {}) {
         },
       });
     }
-
-    // If the route we're working on is on the ignore list, bail out as well
-    ignoreRoutes.forEach((route) => {
-      if (url.includes(route)) {
-        if (debug === "full" || debug === "headers") {
-          debugHeaders = { "gaw-applied": "skip-route" };
-        }
-        return new Response(response.body, {
-          ...response,
-          headers: {
-            ...response.headers,
-            "Content-Encoding": "gzip",
-            ...debugHeaders,
-          },
-        });
-      }
-    });
 
     // We use a cookie to allow us to manually disable the grid-aware feature.
     // This is useful for testing purposes. It can also be used to disable the feature for specific users.
