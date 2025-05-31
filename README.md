@@ -1,9 +1,5 @@
 # Grid-aware Websites - Cloudflare Workers Plugin
 
-> [!NOTE]
-> We're working on simplifying the process of using Grid-aware Websites with Cloudflare Workers by reducing the amount of setup and boilerplate code that needs to be written.
-> To try an alpha version of this, please change to the [`simplify-implementation`](https://github.com/thegreenwebfoundation/gaw-plugin-cloudflare-workers/tree/simplify-implementation) branch.
-
 This plugin provides some useful functions that can be used when setting up the [`@greenweb/grid-aware websites`](/thegreenwebfoundation/grid-aware-websites/README.md) library using [Cloudflare Workers](https://workers.cloudflare.com/).
 
 ## Quickstart
