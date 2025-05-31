@@ -262,9 +262,9 @@ async function auto(request, env, ctx, config = {}) {
     const { country } = location;
 
     // If the country data does not exist, then return the response without any changes.
-    if (!country) {
+    if (!country && (!lat || !lon)) {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { "gaw-applied": "no-cf-country" };
+        debugHeaders = { "gaw-applied": "no-location-found" };
       }
       return new Response(response.body, {
         ...response,
