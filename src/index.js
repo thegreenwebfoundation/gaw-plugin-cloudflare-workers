@@ -193,8 +193,6 @@ async function auto(request, env, ctx, config = {}) {
     const response = await fetch(request.url);
     const contentTypeHeader = response.headers.get("content-type");
 
-    // console.log({config, gawOptions})
-
     // Then check if the request content type is HTML.
     // If the content is not HTML, then return the response without any changes.
     if (!contentTypeHeader) {
@@ -215,8 +213,6 @@ async function auto(request, env, ctx, config = {}) {
     const isContentTypeValid = contentType.some((type) =>
       contentTypeHeader.toLowerCase().includes(type.toLowerCase()),
     );
-
-    // console.log(url, 'Content type header', contentTypeHeader, contentType, 'isContentTypeValid', isContentTypeValid);
 
     if (!isContentTypeValid) {
       if (debug === "full" || debug === "logs") {
