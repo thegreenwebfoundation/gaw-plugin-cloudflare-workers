@@ -1,5 +1,4 @@
 import { PowerBreakdown, GridIntensity } from "@greenweb/grid-aware-websites";
-import { fetch } from "@cloudflare/workers-types";
 
 /**
  * Type definitions
@@ -186,6 +185,7 @@ async function auto(request, env, ctx, config = {}) {
     // If the route we're working on is on the ignore list, bail out as well
     ignoreRoutes.forEach((route) => {
       if (url.includes(route)) {
+        // @ts-ignore
         return fetch(request);
       }
     });
@@ -432,6 +432,8 @@ async function auto(request, env, ctx, config = {}) {
     if (debug === "full" || debug === "headers") {
       debugHeaders = { "gaw-applied": "error-failed" };
     }
+
+    // @ts-ignore
     const errorResponse = await fetch(request);
     return new Response(errorResponse.body, {
       ...errorResponse,
