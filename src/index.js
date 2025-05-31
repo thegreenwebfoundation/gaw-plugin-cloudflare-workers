@@ -1,4 +1,4 @@
-import { PowerBreakdown, GridIntensity } from "@greenweb/grid-aware-websites";
+import { GridIntensity } from "@greenweb/grid-aware-websites";
 
 /**
  * Type definitions
@@ -138,8 +138,6 @@ async function fetchDataFromKv(env, key) {
  * @param {string} [config.ignoreGawCookie='gaw'] - Cookie name to disable GAW for specific users.
  * @param {"country"|"latlon"} [config.locationType='country'] - Type of location data to use.
  * @param {Object} [config.htmlChanges=null] - Custom HTML rewriter for page modifications.
- * @param {"electricity maps"} [config.gawDataSource='electricity maps'] - Data source for grid information.
- * @param {"power"|"carbon"} [config.gawDataType='power'] - Type of grid data to fetch ('power' or 'carbon').
  * @param {string} [config.gawDataApiKey=''] - API key for the data source.
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
@@ -166,20 +164,10 @@ async function auto(request, env, ctx, config = {}) {
     const ignoreRoutes = config?.ignoreRoutes || [];
     const ignoreGawCookie = config?.ignoreGawCookie || "gaw-ignore";
     const htmlChanges = config?.htmlChanges || null;
+    // We set this as an options object so that we can add keys to it later if we want to expand this function
     const gawOptions = {};
-    gawOptions.source =
-      config?.gawDataSource?.toLowerCase() || "electricity maps";
-    gawOptions.type = config?.gawDataType?.toLowerCase() || "power";
-
-    if (gawOptions.type === "power") {
-      gawOptions.mode = "renewable";
-    } else if (gawOptions.type === "carbon") {
-      gawOptions.mode = "average";
-    }
-
     gawOptions.apiKey = config?.gawDataApiKey || "";
 
-    // This would be used inside a Cloudflare worker, so we expect the request and evn to be available.
     const url = request.url;
 
     // If the route we're working on is on the ignore list, bail out as well
@@ -259,7 +247,7 @@ async function auto(request, env, ctx, config = {}) {
 
     // Get the location of the user
     const location = await getLocation(request);
-    const { country } = location;
+    const { lat, lon, country } = location;
 
     // If the country data does not exist, then return the response without any changes.
     if (!country && (!lat || !lon)) {
@@ -285,6 +273,10 @@ async function auto(request, env, ctx, config = {}) {
       if (debug === "full" || debug === "logs") {
         console.log("Using data from KV");
       }
+
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { "gaw-data-source": "workers-kv" };
+      }
     }
 
     // If no cached data, fetch it using the PowerBreakdown class
@@ -293,20 +285,22 @@ async function auto(request, env, ctx, config = {}) {
         console.log("Using data from API");
       }
 
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { "gaw-data-source": "api" };
+      }
+
       const options = {
-        mode: gawOptions.mode,
+        mode: "level",
         apiKey: env.EMAPS_API_KEY || gawOptions.apiKey,
       };
 
       // console.log(options);
 
       if (gawOptions.source === "electricity maps") {
-        if (gawOptions.type === "power") {
-          const powerBreakdown = new PowerBreakdown(options);
-          // console.log('PowerBreakdown', powerBreakdown);
-          gridData = await powerBreakdown.check(country);
-        } else if (gawOptions.type === "carbon") {
-          const gridIntensity = new GridIntensity(options);
+        const gridIntensity = new GridIntensity(options);
+        if (lat && lon) {
+          gridData = await gridIntensity.check({ lat, lon });
+        } else {
           gridData = await gridIntensity.check(country);
         }
 
@@ -357,6 +351,10 @@ async function auto(request, env, ctx, config = {}) {
         // If there's a cached response, return it with the additional headers.
         if (debug === "full" || debug === "logs") {
           console.log("Using cached page from KV");
+        }
+
+        if (debug === "full" || debug === "headers") {
+          debugHeaders = { "gaw-page-source": "workers kv" };
         }
 
         if (cachedResponse) {
