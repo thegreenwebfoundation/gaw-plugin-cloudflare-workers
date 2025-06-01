@@ -398,8 +398,13 @@ async function auto(request, env, ctx, config = {}) {
 
       // If there's no cached response, we'll modify the HTML page.
       let rewriter = null;
-      if (htmlChanges) {
-        rewriter = htmlChanges;
+
+      if (gridData.level === "low" && htmlChanges.low) {
+        rewriter = htmlChanges.low;
+      } else if (gridData.level === "moderate" && htmlChanges.moderate) {
+        rewriter = htmlChanges.moderate;
+      } else if (gridData.level === "high" && htmlChanges.high) {
+        rewriter = htmlChanges.high;
       }
 
       if (rewriter) {
