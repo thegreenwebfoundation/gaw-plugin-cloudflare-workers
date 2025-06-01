@@ -136,7 +136,7 @@ async function fetchDataFromKv(env, key) {
  * @param {string[]} [config.contentType=['text/html']] - Content types to process.
  * @param {string[]} [config.ignoreRoutes=[]] - Routes to exclude from GAW processing.
  * @param {string} [config.ignoreGawCookie='gaw'] - Cookie name to disable GAW for specific users.
- * @param {"country"|"latlon"} [config.locationType='country'] - Type of location data to use.
+ * @param {"latlon"|"country"} [config.locationType='latlon'] - Type of location data to use.
  * @param {Object} [config.htmlChanges=null] - An object to capture the different HTML changes that are applied at each different grid intesity level.
  * @param {Object} [config.htmlChanges.low=null] - Custom HTMLRewriter for page modification at low grid intensity level.
  * @param {Object} [config.htmlChanges.moderate=null] - Custom HTMLRewriter for page modification at moderate grid intensity level.
@@ -167,7 +167,7 @@ async function auto(request, env, ctx, config = {}) {
     const ignoreRoutes = config?.ignoreRoutes || [];
     const ignoreGawCookie = config?.ignoreGawCookie || "gaw-ignore";
     const htmlChanges = config?.htmlChanges || null;
-    const locationType = config.locationType || "latlon"
+    const locationType = config.locationType || "latlon";
     // We set this as an options object so that we can add keys to it later if we want to expand this function
     const gawOptions = {};
     gawOptions.apiKey = config?.gawDataApiKey || "";
@@ -189,7 +189,7 @@ async function auto(request, env, ctx, config = {}) {
     // If the content is not HTML, then return the response without any changes.
     if (!contentTypeHeader) {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { ...debugHeaders,  "gaw-applied": "no-content-type" };
+        debugHeaders = { ...debugHeaders, "gaw-applied": "no-content-type" };
       }
       return new Response(response.body, {
         ...response,
@@ -218,7 +218,7 @@ async function auto(request, env, ctx, config = {}) {
       }
 
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { ...debugHeaders,  "gaw-applied": "skip-content-type" };
+        debugHeaders = { ...debugHeaders, "gaw-applied": "skip-content-type" };
       }
 
       return new Response(response.body, {
@@ -237,7 +237,7 @@ async function auto(request, env, ctx, config = {}) {
     const requestCookies = request.headers.get("cookie");
     if (requestCookies && requestCookies.includes(ignoreGawCookie)) {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { ...debugHeaders,  "gaw-applied": "skip-cookie" };
+        debugHeaders = { ...debugHeaders, "gaw-applied": "skip-cookie" };
       }
       return new Response(response.body, {
         ...response,
@@ -251,7 +251,7 @@ async function auto(request, env, ctx, config = {}) {
 
     // Get the location of the user
     const location = await getLocation(request, {
-      mode: locationType
+      mode: locationType,
     });
 
     const { lat, lon, country } = location;
@@ -259,11 +259,11 @@ async function auto(request, env, ctx, config = {}) {
     // If the country data does not exist, then return the response without any changes.
     if (!country && (!lat || !lon)) {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { ...debugHeaders,  "gaw-applied": "no-location-found" };
+        debugHeaders = { ...debugHeaders, "gaw-applied": "no-location-found" };
       }
 
       if (debug === "full" || debug === "logs") {
-        console.log("No location found.")
+        console.log("No location found.");
       }
       return new Response(response.body, {
         ...response,
@@ -277,7 +277,10 @@ async function auto(request, env, ctx, config = {}) {
 
     if (lat && lon) {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { ...debugHeaders,  "gaw-location": `lat: ${lat}, lon: ${lon}` };
+        debugHeaders = {
+          ...debugHeaders,
+          "gaw-location": `lat: ${lat}, lon: ${lon}`,
+        };
       }
 
       if (debug === "full" || debug === "logs") {
@@ -285,7 +288,7 @@ async function auto(request, env, ctx, config = {}) {
       }
     } else {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { ...debugHeaders,  "gaw-location": `${country}` };
+        debugHeaders = { ...debugHeaders, "gaw-location": `${country}` };
       }
 
       if (debug === "full" || debug === "logs") {
@@ -296,8 +299,7 @@ async function auto(request, env, ctx, config = {}) {
     let gridData = {};
 
     if (config?.kvCacheData) {
-
-      let cachedData = ''
+      let cachedData = "";
       // Check if we have have cached grid data for the country
       if (lat && lon) {
         cachedData = await fetchDataFromKv(env, `${lat}_${lon}`);
@@ -306,9 +308,9 @@ async function auto(request, env, ctx, config = {}) {
       }
 
       try {
-        gridData = JSON.parse(cachedData)
+        gridData = JSON.parse(cachedData);
       } catch {
-        console.log("Error parsing KV data")
+        console.log("Error parsing KV data");
       }
 
       if (gridData?.status) {
@@ -317,7 +319,7 @@ async function auto(request, env, ctx, config = {}) {
         }
 
         if (debug === "full" || debug === "headers") {
-          debugHeaders = { ...debugHeaders,  "gaw-data-source": "workers-kv" };
+          debugHeaders = { ...debugHeaders, "gaw-data-source": "workers-kv" };
         }
       }
     }
@@ -329,7 +331,7 @@ async function auto(request, env, ctx, config = {}) {
       }
 
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { ...debugHeaders,  "gaw-data-source": "api" };
+        debugHeaders = { ...debugHeaders, "gaw-data-source": "api" };
       }
 
       const options = {
@@ -337,42 +339,42 @@ async function auto(request, env, ctx, config = {}) {
         apiKey: env.EMAPS_API_KEY || gawOptions.apiKey,
       };
 
-        const gridIntensity = new GridIntensity(options);
-        if (lat && lon) {
-          gridData = await gridIntensity.check({ lat, lon });
-        } else {
-          gridData = await gridIntensity.check(country);
+      const gridIntensity = new GridIntensity(options);
+      if (lat && lon) {
+        gridData = await gridIntensity.check({ lat, lon });
+      } else {
+        gridData = await gridIntensity.check(country);
+      }
+
+      // If there's an error getting data, return the web page without any modifications
+      if (gridData && "status" in gridData && gridData.status === "error") {
+        if (debug === "full" || debug === "headers") {
+          debugHeaders = { ...debugHeaders, "gaw-applied": "error-grid-data" };
         }
 
-        // If there's an error getting data, return the web page without any modifications
-        if (gridData && "status" in gridData && gridData.status === "error") {
-          if (debug === "full" || debug === "headers") {
-            debugHeaders = { ...debugHeaders,  "gaw-applied": "error-grid-data" };
-          }
-
-          if (debug === "full" || debug === "logs") {
-            console.log("Error getting grid data", gridData);
-          }
-
-          return new Response(response.body, {
-            ...response,
-            headers: {
-              ...response.headers,
-              "Content-Encoding": "gzip",
-              ...debugHeaders,
-            },
-          });
+        if (debug === "full" || debug === "logs") {
+          console.log("Error getting grid data", gridData);
         }
+
+        return new Response(response.body, {
+          ...response,
+          headers: {
+            ...response.headers,
+            "Content-Encoding": "gzip",
+            ...debugHeaders,
+          },
+        });
+      }
 
       if (config?.kvCacheData) {
         // Save the fresh data to KV for future use.
         // By default data is stored for 1 hour.
         if (lat && lon) {
           await saveDataToKv(env, `${lat}_${lon}`, JSON.stringify(gridData));
-          console.log("saved latlon to kv")
+          console.log("saved latlon to kv");
         } else if (country) {
           await saveDataToKv(env, `${country}`, JSON.stringify(gridData));
-          console.log("saved country to kv")
+          console.log("saved country to kv");
         }
       }
     }
@@ -414,52 +416,52 @@ async function auto(request, env, ctx, config = {}) {
       }
     }
 
-      // If there's no cached response, we'll modify the HTML page.
-      let rewriter = null;
+    // If there's no cached response, we'll modify the HTML page.
+    let rewriter = null;
 
-      if (gridData.level === "low" && htmlChanges.low) {
-        rewriter = htmlChanges.low;
-      } else if (gridData.level === "moderate" && htmlChanges.moderate) {
-        rewriter = htmlChanges.moderate;
-      } else if (gridData.level === "high" && htmlChanges.high) {
-        rewriter = htmlChanges.high;
+    if (gridData.level === "low" && htmlChanges.low) {
+      rewriter = htmlChanges.low;
+    } else if (gridData.level === "moderate" && htmlChanges.moderate) {
+      rewriter = htmlChanges.moderate;
+    } else if (gridData.level === "high" && htmlChanges.high) {
+      rewriter = htmlChanges.high;
+    }
+
+    if (rewriter) {
+      if (debug === "full" || debug === "logs") {
+        console.log("Using HTMLRewriter");
       }
 
-      if (rewriter) {
-        if (debug === "full" || debug === "logs") {
-          console.log("Using HTMLRewriter");
-        }
-
-        const gawResponse = new Response(
-          rewriter.transform(response.clone()).body,
-          {
-            ...response,
-            headers: {
-              ...response.headers,
-              "Content-Type": contentTypeHeader,
-              "Content-Encoding": "gzip",
-              ...debugHeaders,
-            },
+      const gawResponse = new Response(
+        rewriter.transform(response.clone()).body,
+        {
+          ...response,
+          headers: {
+            ...response.headers,
+            "Content-Type": contentTypeHeader,
+            "Content-Encoding": "gzip",
+            ...debugHeaders,
           },
+        },
+      );
+
+      if (config?.kvCachePage) {
+        // Store the modified response in the KV for 24 hours
+        // We'll use the Cloudflare Workers plugin to perform this action. The plugin sets an expirationTtl of 24 hours by default, but this can be changed
+        await savePageToKv(
+          env,
+          `${gridData.level}_${request.url}`,
+          gawResponse.clone(),
         );
-
-        if (config?.kvCachePage) {
-          // Store the modified response in the KV for 24 hours
-          // We'll use the Cloudflare Workers plugin to perform this action. The plugin sets an expirationTtl of 24 hours by default, but this can be changed
-          await savePageToKv(
-            env,
-            `${gridData.level}_${request.url}`,
-            gawResponse.clone(),
-          );
-
-          return gawResponse;
-        }
 
         return gawResponse;
       }
 
+      return gawResponse;
+    }
+
     if (debug === "full" || debug === "headers") {
-      debugHeaders = { ...debugHeaders,  "gaw-applied": "no-grid-aware" };
+      debugHeaders = { ...debugHeaders, "gaw-applied": "no-grid-aware" };
     }
 
     // If the gridAware value is set to false, then return the response as is.
@@ -476,7 +478,11 @@ async function auto(request, env, ctx, config = {}) {
     // If there's an error getting data, return the web page without any modifications
     // console.log('Error getting grid data', e);
     if (debug === "full" || debug === "headers") {
-      debugHeaders = { ...debugHeaders,  ...debugHeaders,  "gaw-applied": "error-failed" };
+      debugHeaders = {
+        ...debugHeaders,
+        ...debugHeaders,
+        "gaw-applied": "error-failed",
+      };
     }
 
     // @ts-ignore

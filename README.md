@@ -8,6 +8,8 @@ The easiest way to use this plugin is by utilising the `gridAwareAuto` functiona
 
 Install this library in your project using `npm install @greenweb/gaw-plugin-cloudflare-workers`.
 
+> ![NOTE] To use this function you also need to have a valid [Electricity Maps API](https://portal.electricitymaps.com/) key.
+
 Replace your Cloudflare Worker with the following code.
 
 ```js
@@ -23,24 +25,25 @@ export default {
 This code will:
 
 1. Get the request location.
-2. Run the grid-aware logic using the `PowerBreakdown` API.
-3. Return the page regardless of the results.
+2. Fetch the current relative grid intensity using the [Electricity Maps API](https://portal.electricitymaps.com/).
+3. Return the page to the user.
 
 The `gridAwareAuto` function also accepts an options object as the fourth parameter. This allows for some configuration to be made to the implementation. Accepted options values are:
 
-| Option            | Type         | Default              | Possible values                      | Description                                                                                                                                                                    |
-| ----------------- | ------------ | -------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `contentType`     | String[]     | `['text/html']`      | Example: ['text/html', 'text/css']   | Defines the content types that should be processed                                                                                                                             |
-| `ignoreRoutes`    | String[]     | `[]`                 | Example: ['/wp-admin', '/assets/js'] | A list of routes where grid-aware code should not be applied                                                                                                                   |
-| `ignoreGawCookie` | String       | `'gaw-ignore'`       | "gaw-ignore"                         | A cookie that when present will result in grid-aware code being skipped                                                                                                        |
-| `locationType`    | String       | `'country'`          | "country", "latlon"                  | Indicates the geolocation data to use for grid-aware checks.                                                                                                                   |
-| `htmlChanges`     | HTMLRewriter | `null`               | See code example below               | HTMLRewriter functions which can be used to make adjustments to the page when grid-aware changes need to be appplied.                                                          |
-| `gawDataSource`   | String       | `'electricity maps'` | "electricity maps"                   | The data source to use from the core [Grid-aware Websites](https://github.com/thegreenwebfoundation/grid-aware-websites?tab=readme-ov-file#working-with-this-library) library. |
-| `gawDataApiKey`   | String       | `''`                 | "xyz123"                             | The API key (if any) for the chosen data source.                                                                                                                               |
-| `gawDataType`     | String       | `'power'`            | "power", "carbon"                    | The data type to use from the core Grid-aware Websites library.                                                                                                                |
-| `kvCacheData`     | Boolean      | `false`              | true, false                          | Indicate if grid data from the API should be cached in Cloudflare Workers KV for one hour. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv).               |
-| `kvCachePage`     | Boolean      | `false`              | true, false                          | Indicates if the modified grid-aware page should be cached in Cloudflare Workers KV for 24 hours. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv)         |
-| `debug`           | String       | "none"               | "none", "full", "headers", "logs"    | Activates debug mode which outputs logs and returns additional response headers.                                                                                               |
+| Option                 | Type         | Default            | Possible values                                                                           | Description                                                                                                                                                            |
+| ---------------------- | ------------ | ------------------ | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `contentType`          | String[]     | `['text/html']`    | Example: ['text/html', 'text/css']                                                        | Defines the content types that should be processed                                                                                                                     |
+| `ignoreRoutes`         | String[]     | `[]`               | Example: ['/wp-admin', '/assets/js']                                                      | A list of routes where grid-aware code should not be applied                                                                                                           |
+| `ignoreGawCookie`      | String       | `'gaw-ignore'`     | "gaw-ignore"                                                                              | A cookie that when present will result in grid-aware code being skipped                                                                                                |
+| `locationType`         | String       | `'latlon'`         | "latlon", "country"                                                                       | Indicates the geolocation data to use for grid-aware checks.                                                                                                           |
+| `htmlChanges`          | Object       | {}                 | {"low": HTMLRewriter, "moderate": HTMLRewriter, "high": HTMLRewriter}                     | An object containing HTMLRewriter functions which are used to make adjustments to the page based on the relative grid intensity.                                       |
+| `htmlChanges.low`      | HTMLRewriter | See example below. | A HTMLRewriter function which is applied to the page at low relative grid intensity.      |
+| `htmlChanges.moderate` | HTMLRewriter | See example below. | A HTMLRewriter function which is applied to the page at moderate relative grid intensity. |
+| `htmlChanges.high`     | HTMLRewriter | See example below. | A HTMLRewriter function which is applied to the page at high relative grid intensity.     |
+| `gawDataApiKey`        | String       | `''`               | "xyz123"                                                                                  | A valid [Electricity Maps API](https://portal.electricitymaps.com/) key.                                                                                               |
+| `kvCacheData`          | Boolean      | `false`            | true, false                                                                               | Indicate if grid data from the API should be cached in Cloudflare Workers KV for one hour. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv).       |
+| `kvCachePage`          | Boolean      | `false`            | true, false                                                                               | Indicates if the modified grid-aware page should be cached in Cloudflare Workers KV for 24 hours. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv) |
+| `debug`                | String       | "none"             | "none", "full", "headers", "logs"                                                         | Activates debug mode which outputs logs and returns additional response headers.                                                                                       |
 
 The following example will run on all HTML pages, but will skip any routes (URLs) that include the `/company/` or `/profile/` strings. It will use Electricity Maps as the data source, and uses an API key which has been set as an environment secret. IF grid-aware changes need to be applied to the page, a `data-grid-aware=true` attribute will be set on the HTML element.
 
@@ -54,12 +57,15 @@ export default {
     ignoreRoutes: ['/company/`, `/profile/`],
     // Use this API key that has been saved as a secret
     gawDataApiKey: env.EMAPS_API_KEY,
-    // Make these changes to the web page using HTMLRewriter
-    htmlChanges: new HTMLRewriter().on('html', {
-      element(element) {
-        element.setAttribute('data-grid-aware', 'true');
-      },
-    }),
+    // Make these changes to the web page using HTMLRewriter when the grid intensity is high.
+    // All other states (low, moderate) will return the page as normal - no changes applied.
+    htmlChanges: {
+      high: new HTMLRewriter().on('html', {
+        element(element) {
+          element.setAttribute('data-grid-aware', 'true');
+        },
+      }),
+    }
   });
  },
 };
