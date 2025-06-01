@@ -293,8 +293,14 @@ async function auto(request, env, ctx, config = {}) {
     let gridData = {};
 
     if (config?.kvCacheData) {
+
+      let cachedData = ''
       // Check if we have have cached grid data for the country
-      gridData = await fetchDataFromKv(env, country);
+      if (lat && lon) {
+        cachedData = await fetchDataFromKv(env, `${lat}_${lon}`);
+      } else {
+        cachedData = await fetchDataFromKv(env, country);
+      }
 
       if (debug === "full" || debug === "logs") {
         console.log("Using data from KV");
@@ -354,7 +360,13 @@ async function auto(request, env, ctx, config = {}) {
       if (config?.kvCacheData) {
         // Save the fresh data to KV for future use.
         // By default data is stored for 1 hour.
-        await saveDataToKv(env, country, JSON.stringify(gridData));
+        if (lat && lon) {
+          await saveDataToKv(env, `${lat}_${lon}`, JSON.stringify(gridData));
+          console.log("saved latlon to kv")
+        } else if (country) {
+          await saveDataToKv(env, `${country}`, JSON.stringify(gridData));
+          console.log("saved country to kv")
+        }
       }
     } else {
       // Otherwise we're using cached data, so let's parse that
@@ -371,13 +383,16 @@ async function auto(request, env, ctx, config = {}) {
         };
       }
 
-      if (config?.kvCachePage) {
-        // First, check if we've already got a cached response for the request URL. We do this using the Cloudflare Workers plugin.
-        const cachedResponse = await fetchPageFromKv(env, request.url);
-        // If there's a cached response, return it with the additional headers.
-        if (debug === "full" || debug === "logs") {
-          console.log("Using cached page from KV");
-        }
+    if (config?.kvCachePage) {
+      // First, check if we've already got a cached response for the request URL. We do this using the Cloudflare Workers plugin.
+      const cachedResponse = await fetchPageFromKv(
+        env,
+        `${gridData.level}_${request.url}`,
+      );
+      // If there's a cached response, return it with the additional headers.
+      if (debug === "full" || debug === "logs") {
+        console.log("Using cached page from KV");
+      }
 
         if (debug === "full" || debug === "headers") {
           debugHeaders = { "gaw-page-source": "workers kv" };
@@ -428,7 +443,11 @@ async function auto(request, env, ctx, config = {}) {
         if (config?.kvCachePage) {
           // Store the modified response in the KV for 24 hours
           // We'll use the Cloudflare Workers plugin to perform this action. The plugin sets an expirationTtl of 24 hours by default, but this can be changed
-          await savePageToKv(env, request.url, gawResponse.clone());
+          await savePageToKv(
+            env,
+            `${gridData.level}_${request.url}`,
+            gawResponse.clone(),
+          );
 
           return gawResponse;
         }
