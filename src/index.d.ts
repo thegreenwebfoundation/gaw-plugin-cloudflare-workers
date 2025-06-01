@@ -40,9 +40,10 @@ export type cloudflareContext = import("./types").cloudflareContext;
  * @param {string[]} [config.ignoreRoutes=[]] - Routes to exclude from GAW processing.
  * @param {string} [config.ignoreGawCookie='gaw'] - Cookie name to disable GAW for specific users.
  * @param {"country"|"latlon"} [config.locationType='country'] - Type of location data to use.
- * @param {Object} [config.htmlChanges=null] - Custom HTML rewriter for page modifications.
- * @param {"electricity maps"} [config.gawDataSource='electricity maps'] - Data source for grid information.
- * @param {"power"|"carbon"} [config.gawDataType='power'] - Type of grid data to fetch ('power' or 'carbon').
+ * @param {Object} [config.htmlChanges=null] - An object to capture the different HTML changes that are applied at each different grid intesity level.
+ * @param {Object} [config.htmlChanges.low=null] - Custom HTMLRewriter for page modification at low grid intensity level.
+ * @param {Object} [config.htmlChanges.moderate=null] - Custom HTMLRewriter for page modification at moderate grid intensity level.
+ * @param {Object} [config.htmlChanges.high=null] - Custom HTMLRewriter for page modification at high grid intensity level.
  * @param {string} [config.gawDataApiKey=''] - API key for the data source.
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
@@ -65,9 +66,11 @@ declare function auto(request: cloudflareRequest, env: cloudflareEnv, ctx: cloud
     ignoreRoutes?: string[];
     ignoreGawCookie?: string;
     locationType?: "country" | "latlon";
-    htmlChanges?: any;
-    gawDataSource?: "electricity maps";
-    gawDataType?: "power" | "carbon";
+    htmlChanges?: {
+        low?: any;
+        moderate?: any;
+        high?: any;
+    };
     gawDataApiKey?: string;
     kvCacheData?: boolean;
     kvCachePage?: boolean;
