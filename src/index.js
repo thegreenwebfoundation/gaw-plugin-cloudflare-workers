@@ -164,6 +164,7 @@ async function auto(request, env, ctx, config = {}) {
     const ignoreRoutes = config?.ignoreRoutes || [];
     const ignoreGawCookie = config?.ignoreGawCookie || "gaw-ignore";
     const htmlChanges = config?.htmlChanges || null;
+    const locationType = config.locationType || "latlon"
     // We set this as an options object so that we can add keys to it later if we want to expand this function
     const gawOptions = {};
     gawOptions.apiKey = config?.gawDataApiKey || "";
@@ -246,13 +247,20 @@ async function auto(request, env, ctx, config = {}) {
     }
 
     // Get the location of the user
-    const location = await getLocation(request);
+    const location = await getLocation(request, {
+      mode: locationType
+    });
+
     const { lat, lon, country } = location;
 
     // If the country data does not exist, then return the response without any changes.
     if (!country && (!lat || !lon)) {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { "gaw-applied": "no-location-found" };
+        debugHeaders = { ...debugHeaders,  "gaw-applied": "no-location-found" };
+      }
+
+      if (debug === "full" || debug === "logs") {
+        console.log("No location found.")
       }
       return new Response(response.body, {
         ...response,
@@ -264,7 +272,25 @@ async function auto(request, env, ctx, config = {}) {
       });
     }
 
-    let gridData = null;
+    if (lat && lon) {
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { ...debugHeaders,  "gaw-location": `lat: ${lat}, lon: ${lon}` };
+      }
+
+      if (debug === "full" || debug === "logs") {
+        console.log(`Location: lat: ${lat}, lon: ${lon}`);
+      }
+    } else {
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { ...debugHeaders,  "gaw-location": `${country}` };
+      }
+
+      if (debug === "full" || debug === "logs") {
+        console.log(`Location: ${country}`);
+      }
+    }
+
+    let gridData = {};
 
     if (config?.kvCacheData) {
       // Check if we have have cached grid data for the country
