@@ -326,9 +326,6 @@ async function auto(request, env, ctx, config = {}) {
         apiKey: env.EMAPS_API_KEY || gawOptions.apiKey,
       };
 
-      // console.log(options);
-
-      if (gawOptions.source === "electricity maps") {
         const gridIntensity = new GridIntensity(options);
         if (lat && lon) {
           gridData = await gridIntensity.check({ lat, lon });
@@ -337,9 +334,9 @@ async function auto(request, env, ctx, config = {}) {
         }
 
         // If there's an error getting data, return the web page without any modifications
-        if (gridData?.status === "error") {
+        if (gridData && "status" in gridData && gridData.status === "error") {
           if (debug === "full" || debug === "headers") {
-            debugHeaders = { "gaw-applied": "error-grid-data" };
+            debugHeaders = { ...debugHeaders,  "gaw-applied": "error-grid-data" };
           }
 
           if (debug === "full" || debug === "logs") {
