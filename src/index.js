@@ -166,7 +166,7 @@ async function auto(request, env, ctx, config = {}) {
     const contentType = config?.contentType || ["text/html"];
     const ignoreRoutes = config?.ignoreRoutes || [];
     const ignoreGawCookie = config?.ignoreGawCookie || "gaw-ignore";
-    const htmlChanges = config?.htmlChanges || null;
+    const htmlChanges = config?.htmlChanges || {};
     const locationType = config.locationType || "latlon";
     // We set this as an options object so that we can add keys to it later if we want to expand this function
     const gawOptions = {};
