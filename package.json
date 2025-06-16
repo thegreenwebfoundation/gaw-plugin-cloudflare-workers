@@ -52,6 +52,6 @@
     "vitest": "^3.1.4"
   },
   "dependencies": {
-    "@greenweb/grid-aware-websites": "^0.3.1"
+    "@greenweb/grid-aware-websites": "^0.4.0-0"
   }
 }

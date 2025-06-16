@@ -6,7 +6,7 @@ This plugin provides some useful functions that can be used when setting up the 
 
 The easiest way to use this plugin is by utilising the `gridAwareAuto` functionality that it provides. As a minimum, you would need to have the below code in your Cloudflare Worker.
 
-Install this library in your project using `npm install @greenweb/gaw-plugin-cloudflare-workers`.
+Install this library in your project using `npm install @greenweb/gaw-plugin-cloudflare-workers@next`.
 
 > ![NOTE] To use this function you also need to have a valid [Electricity Maps API](https://portal.electricitymaps.com/) key.
 
