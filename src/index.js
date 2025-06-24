@@ -151,9 +151,7 @@ async function fetchDataFromKv(env, key) {
  * export default {
  *   async fetch(request, env, ctx) {
  *     return auto(request, env, ctx, {
- *       gawOptions: {
- *         apiKey: 'your-api-key'
- *       }
+ *         gawDataApiKey: 'your-api-key'
  *     });
  *   }
  * };
