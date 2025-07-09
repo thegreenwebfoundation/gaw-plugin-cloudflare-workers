@@ -170,6 +170,20 @@ async function auto(request, env, ctx, config = {}) {
     const gawOptions = {};
     gawOptions.apiKey = config?.gawDataApiKey || "";
 
+    let newRequest = null;
+    if (devMode) {
+      console.log("devMode is enabled");
+      const url = new URL(request.url);
+      url.hostname = "localhost";
+      url.port = "8080";
+      url.protocol = "http";
+      newRequest = new Request(url.toString(), request);
+    }
+
+    if (newRequest) {
+      request = newRequest;
+    }
+
     const url = request.url;
 
     // If the route we're working on is on the ignore list, bail out as well
