@@ -166,6 +166,7 @@ async function auto(request, env, ctx, config = {}) {
     const ignoreGawCookie = config?.ignoreGawCookie || "gaw-ignore";
     const htmlChanges = config?.htmlChanges || {};
     const locationType = config.locationType || "latlon";
+    const devMode = config.dev || true;
     // We set this as an options object so that we can add keys to it later if we want to expand this function
     const gawOptions = {};
     gawOptions.apiKey = config?.gawDataApiKey || "";
@@ -247,6 +248,28 @@ async function auto(request, env, ctx, config = {}) {
     // We use a cookie to allow us to manually disable the grid-aware feature.
     // This is useful for testing purposes. It can also be used to disable the feature for specific users.
     const requestCookies = request.headers.get("cookie");
+
+    let rewriter = null;
+    if (requestCookies && requestCookies.includes("gaw-override")) {
+      if (requestCookies.includes("gaw-override=low")) {
+        rewriter = htmlChanges.low;
+      } else if (requestCookies.includes("gaw-override=moderate")) {
+        rewriter = htmlChanges.moderate;
+      } else if (requestCookies.includes("gaw-override=high")) {
+        rewriter = htmlChanges.high;
+      }
+
+      return new Response(rewriter.transform(response.clone()).body, {
+        ...response,
+        headers: {
+          ...response.headers,
+          "Content-Type": contentTypeHeader,
+          "Content-Encoding": "gzip",
+          ...debugHeaders,
+        },
+      });
+    }
+
     if (requestCookies && requestCookies.includes(ignoreGawCookie)) {
       if (debug === "full" || debug === "headers") {
         debugHeaders = { ...debugHeaders, "gaw-applied": "skip-cookie" };
@@ -429,14 +452,31 @@ async function auto(request, env, ctx, config = {}) {
     }
 
     // If there's no cached response, we'll modify the HTML page.
-    let rewriter = null;
 
     if (gridData.level === "low" && htmlChanges.low) {
       rewriter = htmlChanges.low;
+      rewriter.on("gaw-info-bar", {
+        element(element) {
+          element.setAttribute("data-gaw-level", "low");
+          element.setAttribute("data-gaw-location", gridData.region);
+        },
+      });
     } else if (gridData.level === "moderate" && htmlChanges.moderate) {
       rewriter = htmlChanges.moderate;
+      rewriter.on("gaw-info-bar", {
+        element(element) {
+          element.setAttribute("data-gaw-level", "moderate");
+          element.setAttribute("data-gaw-location", gridData.region);
+        },
+      });
     } else if (gridData.level === "high" && htmlChanges.high) {
       rewriter = htmlChanges.high;
+      rewriter.on("gaw-info-bar", {
+        element(element) {
+          element.setAttribute("data-gaw-level", "high");
+          element.setAttribute("data-gaw-location", gridData.region);
+        },
+      });
     }
 
     if (rewriter) {
