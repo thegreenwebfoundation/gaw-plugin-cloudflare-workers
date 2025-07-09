@@ -145,6 +145,11 @@ async function fetchDataFromKv(env, key) {
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
  * @param {"none"|"full"|"headers"|"logs"} [config.debug="none"] - Activates debug mode which outputs logs and returns additional response headers.
+ * @param {Object} [config.devConfig=null] - Configuration for development mode.
+ * @param {string} [config.devConfig.hostname=''] - Hostname for development mode.
+ * @param {string} [config.devConfig.port=''] - Port for development mode.
+ * @param {string} [config.devConfig.protocol=''] - Protocol for development mode.
+ * @param {boolean} [config.devMode=false] - Whether to enable development mode.
  * @returns {Promise<Response>} A modified or unmodified response based on grid data and configuration.
  * @example
  * // Basic usage in a Cloudflare Worker
@@ -167,17 +172,17 @@ async function auto(request, env, ctx, config = {}) {
     const htmlChanges = config?.htmlChanges || {};
     const locationType = config.locationType || "latlon";
     const devMode = config.dev || true;
+    const devConfig = config.devConfig || {};
     // We set this as an options object so that we can add keys to it later if we want to expand this function
     const gawOptions = {};
     gawOptions.apiKey = config?.gawDataApiKey || "";
 
     let newRequest = null;
     if (devMode) {
-      console.log("devMode is enabled");
       const url = new URL(request.url);
-      url.hostname = "localhost";
-      url.port = "8080";
-      url.protocol = "http";
+      url.hostname = devConfig.hostname || "localhost";
+      url.port = devConfig.port || "8080";
+      url.protocol = devConfig.protocol || "http";
       newRequest = new Request(url.toString(), request);
     }
 
