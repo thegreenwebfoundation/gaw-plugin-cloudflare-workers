@@ -146,7 +146,7 @@ async function fetchDataFromKv(env, key) {
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
  * @param {"none"|"full"|"headers"|"logs"} [config.debug="none"] - Activates debug mode which outputs logs and returns additional response headers.
- * @param {boolean} [config.devMode=false] - Whether to enable development mode.
+ * @param {boolean} [config.dev=false] - Whether to enable development mode.
  * @param {Object} [config.devConfig=null] - Configuration for development mode.
  * @param {string} [config.devConfig.hostname=''] - Hostname for development mode.
  * @param {string} [config.devConfig.port=''] - Port for development mode.
@@ -186,10 +186,12 @@ async function auto(request, env, ctx, config = {}) {
       url.hostname = devConfig.hostname || "localhost";
       url.port = devConfig.port || "8080";
       url.protocol = devConfig.protocol || "http";
+      // @ts-ignore
       newRequest = new Request(url.toString(), request);
     }
 
     if (newRequest) {
+      // @ts-ignore
       request = newRequest;
     }
 
