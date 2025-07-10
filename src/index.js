@@ -142,6 +142,7 @@ async function fetchDataFromKv(env, key) {
  * @param {Object} [config.htmlChanges.moderate=null] - Custom HTMLRewriter for page modification at moderate grid intensity level.
  * @param {Object} [config.htmlChanges.high=null] - Custom HTMLRewriter for page modification at high grid intensity level.
  * @param {string} [config.gawDataApiKey=''] - API key for the data source.
+ * @param {string} [config.infoBarTarget=''] - A CSS selector (ID or Class Name) for the info bar element.
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
  * @param {"none"|"full"|"headers"|"logs"} [config.debug="none"] - Activates debug mode which outputs logs and returns additional response headers.
@@ -173,6 +174,7 @@ async function auto(request, env, ctx, config = {}) {
     const locationType = config.locationType || "latlon";
     const devMode = config.dev || false;
     const devConfig = config.devConfig || {};
+    const infoBarTarget = config.infoBarTarget || "";
     // We set this as an options object so that we can add keys to it later if we want to expand this function
     const gawOptions = {};
     gawOptions.apiKey = config?.gawDataApiKey || "";
@@ -263,6 +265,23 @@ async function auto(request, env, ctx, config = {}) {
         rewriter = htmlChanges.moderate;
       } else if (requestCookies.includes("gaw-manual-view=high")) {
         rewriter = htmlChanges.high;
+      }
+
+      if (infoBarTarget.length > 0) {
+        rewriter.on("body", {
+          element(element) {
+            element.append(
+              '<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@latest"></script>',
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarTarget, {
+          element(element) {
+            element.replace(`<gaw-info-bar> </gaw-info-bar>`, { html: true });
+          },
+        });
       }
 
       return new Response(rewriter.transform(response.clone()).body, {
@@ -461,28 +480,69 @@ async function auto(request, env, ctx, config = {}) {
 
     if (gridData.level === "low" && htmlChanges.low) {
       rewriter = htmlChanges.low;
-      rewriter.on("gaw-info-bar", {
-        element(element) {
-          element.setAttribute("data-gaw-level", "low");
-          element.setAttribute("data-gaw-location", gridData.region);
-        },
-      });
+
+      if (infoBarTarget.length > 0) {
+        rewriter.on("body", {
+          element(element) {
+            element.append(
+              '<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@latest"></script>',
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarTarget, {
+          element(element) {
+            element.replace(
+              `<gaw-info-bar data-gaw-level="low" data-gaw-location="${gridData.region}"> </gaw-info-bar>`,
+              { html: true },
+            );
+          },
+        });
+      }
     } else if (gridData.level === "moderate" && htmlChanges.moderate) {
       rewriter = htmlChanges.moderate;
-      rewriter.on("gaw-info-bar", {
-        element(element) {
-          element.setAttribute("data-gaw-level", "moderate");
-          element.setAttribute("data-gaw-location", gridData.region);
-        },
-      });
+      if (infoBarTarget.length > 0) {
+        rewriter.on("body", {
+          element(element) {
+            element.append(
+              '<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@latest"></script>',
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarTarget, {
+          element(element) {
+            element.replace(
+              `<gaw-info-bar data-gaw-level="moderate" data-gaw-location="${gridData.region}"> </gaw-info-bar>`,
+              { html: true },
+            );
+          },
+        });
+      }
     } else if (gridData.level === "high" && htmlChanges.high) {
       rewriter = htmlChanges.high;
-      rewriter.on("gaw-info-bar", {
-        element(element) {
-          element.setAttribute("data-gaw-level", "high");
-          element.setAttribute("data-gaw-location", gridData.region);
-        },
-      });
+
+      if (infoBarTarget.length > 0) {
+        rewriter.on("body", {
+          element(element) {
+            element.append(
+              '<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@latest"></script>',
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarTarget, {
+          element(element) {
+            element.replace(
+              `<gaw-info-bar data-gaw-level="high" data-gaw-location="${gridData.region}"> </gaw-info-bar>`,
+              { html: true },
+            );
+          },
+        });
+      }
     }
 
     if (rewriter) {
