@@ -255,12 +255,12 @@ async function auto(request, env, ctx, config = {}) {
     const requestCookies = request.headers.get("cookie");
 
     let rewriter = null;
-    if (requestCookies && requestCookies.includes("gaw-override")) {
-      if (requestCookies.includes("gaw-override=low")) {
+    if (requestCookies && requestCookies.includes("gaw-manual-view")) {
+      if (requestCookies.includes("gaw-manual-view=low")) {
         rewriter = htmlChanges.low;
-      } else if (requestCookies.includes("gaw-override=moderate")) {
+      } else if (requestCookies.includes("gaw-manual-view=moderate")) {
         rewriter = htmlChanges.moderate;
-      } else if (requestCookies.includes("gaw-override=high")) {
+      } else if (requestCookies.includes("gaw-manual-view=high")) {
         rewriter = htmlChanges.high;
       }
 
