@@ -44,6 +44,9 @@ The `gridAwareAuto` function also accepts an options object as the fourth parame
 | `kvCacheData`          | Boolean      | `false`            | true, false                                                                               | Indicate if grid data from the API should be cached in Cloudflare Workers KV for one hour. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv).       |
 | `kvCachePage`          | Boolean      | `false`            | true, false                                                                               | Indicates if the modified grid-aware page should be cached in Cloudflare Workers KV for 24 hours. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv) |
 | `debug`                | String       | "none"             | "none", "full", "headers", "logs"                                                         | Activates debug mode which outputs logs and returns additional response headers.                                                                                       |
+| `dev`                  | Boolean      | `false`            | true, false                                                                               | Enables development mode, which redirects requests to a local development server.                                                                                      |
+| `devConfig`            | Object       | `{}`               | `{hostname: "localhost", port: "8080", protocol: "http"}`                                 | Configuration options for the development mode, including hostname, port, and protocol.                                                                                |
+| `infoBarTarget`        | String       | `''`               | Example: "header", "#info-container"                                                      | CSS selector for the element where the [grid-aware info bar](https://github.com/thegreenwebfoundation/gaw-web-component) will be inserted.                             |
 
 The following example will run on all HTML pages, but will skip any routes (URLs) that include the `/company/` or `/profile/` strings. It will use Electricity Maps as the data source, and uses an API key which has been set as an environment secret. IF grid-aware changes need to be applied to the page, a `data-grid-aware=true` attribute will be set on the HTML element.
 
@@ -57,6 +60,8 @@ export default {
     ignoreRoutes: ['/company/`, `/profile/`],
     // Use this API key that has been saved as a secret
     gawDataApiKey: env.EMAPS_API_KEY,
+    // A CSS selector for the element where the grid-aware info bar will be inserted.
+    infoBarTarget: "#gaw-info-bar",
     // Make these changes to the web page using HTMLRewriter when the grid intensity is high.
     // All other states (low, moderate) will return the page as normal - no changes applied.
     htmlChanges: {
