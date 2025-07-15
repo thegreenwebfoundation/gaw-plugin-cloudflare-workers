@@ -203,7 +203,8 @@ async function auto(request, env, ctx, config = {}) {
       return fetch(request);
     }
 
-    const response = await fetch(request.url);
+    //@ts-ignore
+    const response = await fetch(request.url, request);
     const contentTypeHeader = response.headers.get("content-type");
 
     // Then check if the request content type is HTML.
