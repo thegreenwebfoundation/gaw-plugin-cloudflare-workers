@@ -198,12 +198,10 @@ async function auto(request, env, ctx, config = {}) {
     const url = request.url;
 
     // If the route we're working on is on the ignore list, bail out as well
-    ignoreRoutes.forEach((route) => {
-      if (url.includes(route)) {
-        // @ts-ignore
-        return fetch(request);
-      }
-    });
+    if (ignoreRoutes.some((route) => url.includes(route))) {
+      // @ts-ignore
+      return fetch(request);
+    }
 
     const response = await fetch(request.url);
     const contentTypeHeader = response.headers.get("content-type");
