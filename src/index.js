@@ -204,7 +204,10 @@ async function auto(request, env, ctx, config = {}) {
     }
 
     //@ts-ignore
-    const response = await fetch(request.url, request);
+    const response = await fetch(request, {
+      redirect: "follow",
+    });
+
     const contentTypeHeader = response.headers.get("content-type");
 
     // Then check if the request content type is HTML.
