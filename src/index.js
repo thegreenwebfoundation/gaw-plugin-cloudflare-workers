@@ -136,6 +136,7 @@ async function fetchDataFromKv(env, key) {
  * @param {string[]} [config.contentType=['text/html']] - Content types to process.
  * @param {string[]} [config.ignoreRoutes=[]] - Routes to exclude from GAW processing.
  * @param {string} [config.ignoreGawCookie='gaw'] - Cookie name to disable GAW for specific users.
+ * @param {boolean} [config.userOptIn=false] - Allows developers to specify if whether users are required to opt-in to the grid-aware website experience on their site.
  * @param {"latlon"|"country"} [config.locationType='latlon'] - Type of location data to use.
  * @param {Object} [config.htmlChanges=null] - An object to capture the different HTML changes that are applied at each different grid intesity level.
  * @param {Object} [config.htmlChanges.low=null] - Custom HTMLRewriter for page modification at low grid intensity level.
@@ -175,6 +176,8 @@ async function auto(request, env, ctx, config = {}) {
     const devMode = config.dev || false;
     const devConfig = config.devConfig || {};
     const infoBarTarget = config.infoBarTarget || "";
+    const userOptIn = config.userOptIn || false;
+
     // We set this as an options object so that we can add keys to it later if we want to expand this function
     const gawOptions = {};
     gawOptions.apiKey = config?.gawDataApiKey || "";
@@ -200,7 +203,9 @@ async function auto(request, env, ctx, config = {}) {
     // If the route we're working on is on the ignore list, bail out as well
     if (ignoreRoutes.some((route) => url.includes(route))) {
       // @ts-ignore
-      return fetch(request);
+      return fetch(request, {
+        redirect: "follow",
+      });
     }
 
     //@ts-ignore
