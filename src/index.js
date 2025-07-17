@@ -613,7 +613,9 @@ async function auto(request, env, ctx, config = {}) {
     }
 
     // @ts-ignore
-    const errorResponse = await fetch(request);
+    const errorResponse = await fetch(request, {
+      redirect: "follow",
+    });
     return new Response(errorResponse.body, {
       ...errorResponse,
       headers: {
