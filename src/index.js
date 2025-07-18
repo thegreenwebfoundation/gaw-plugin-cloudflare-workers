@@ -346,7 +346,56 @@ async function auto(request, env, ctx, config = {}) {
         ...response,
         headers: {
           ...response.headers,
+          "Content-Type": contentTypeHeader,
           "Content-Encoding": "gzip",
+          ...debugHeaders,
+        },
+      });
+    }
+
+    if (userOptIn && !requestCookies?.includes("gaw-user-opt-in=true")) {
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { ...debugHeaders, "gaw-applied": "user-opt-in" };
+      }
+
+      if (defaultView === "low") {
+        rewriter = htmlChanges.low;
+      } else if (defaultView === "moderate") {
+        rewriter = htmlChanges.moderate;
+      } else if (defaultView === "high") {
+        rewriter = htmlChanges.high;
+      } else {
+        //@ts-ignore
+        rewriter = new HTMLRewriter();
+      }
+
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
+          element(element) {
+            element.append(
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarOptions.target, {
+          element(element) {
+            element.replace(
+              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              { html: true },
+            );
+          },
+        });
+      }
+
+      return new Response(rewriter.transform(response.clone()).body, {
+        ...response,
+        headers: {
+          ...response.headers,
+          "Content-Type": contentTypeHeader,
+          "Content-Encoding": "gzip",
+          "Set-Cookie": "gaw-user-opt-in=false; path=/;",
           ...debugHeaders,
         },
       });
