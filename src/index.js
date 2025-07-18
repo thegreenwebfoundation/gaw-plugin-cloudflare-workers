@@ -142,6 +142,7 @@ async function fetchDataFromKv(env, key) {
  * @param {Object} [config.htmlChanges.low=null] - Custom HTMLRewriter for page modification at low grid intensity level.
  * @param {Object} [config.htmlChanges.moderate=null] - Custom HTMLRewriter for page modification at moderate grid intensity level.
  * @param {Object} [config.htmlChanges.high=null] - Custom HTMLRewriter for page modification at high grid intensity level.
+ * @param {null|'low'|'moderate'|'high'} [config.defaultView=null] - Default view for the grid-aware website experience.
  * @param {string} [config.gawDataApiKey=''] - API key for the data source.
  * @param {Object} [config.infoBar={}] - Configuration for the info bar element.
  * @param {string} [config.infoBar.target=''] - Target element for the info bar.
@@ -179,6 +180,7 @@ async function auto(request, env, ctx, config = {}) {
     const devMode = config.dev || false;
     const devConfig = config.devConfig || {};
     const userOptIn = config.userOptIn || false;
+    const defaultView = config.defaultView || null;
 
     // We set this as an options object so that we can add keys to it later if we want to expand this function
     const gawOptions = {};
