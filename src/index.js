@@ -168,6 +168,12 @@ async function fetchDataFromKv(env, key) {
  * };
  */
 async function auto(request, env, ctx, config = {}) {
+  // Only run function on GET requests
+  if (request.method !== "GET") {
+    //@ts-ignore
+    return fetch(request);
+  }
+
   const debug = config?.debug || "none";
   let debugHeaders = {};
 
