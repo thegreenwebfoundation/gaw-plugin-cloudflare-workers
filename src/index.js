@@ -143,7 +143,10 @@ async function fetchDataFromKv(env, key) {
  * @param {Object} [config.htmlChanges.moderate=null] - Custom HTMLRewriter for page modification at moderate grid intensity level.
  * @param {Object} [config.htmlChanges.high=null] - Custom HTMLRewriter for page modification at high grid intensity level.
  * @param {string} [config.gawDataApiKey=''] - API key for the data source.
- * @param {string} [config.infoBarTarget=''] - A CSS selector (ID or Class Name) for the info bar element.
+ * @param {Object} [config.infoBar={}] - Configuration for the info bar element.
+ * @param {string} [config.infoBar.target=''] - Target element for the info bar.
+ * @param {string} [config.infoBar.version='latest'] - Version of the info bar to use.
+ * @param {string} [config.infoBar.learnMoreLink='#'] - Link to learn more about the info bar.
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
  * @param {"none"|"full"|"headers"|"logs"} [config.debug="none"] - Activates debug mode which outputs logs and returns additional response headers.
@@ -175,12 +178,16 @@ async function auto(request, env, ctx, config = {}) {
     const locationType = config.locationType || "latlon";
     const devMode = config.dev || false;
     const devConfig = config.devConfig || {};
-    const infoBarTarget = config.infoBarTarget || "";
     const userOptIn = config.userOptIn || false;
 
     // We set this as an options object so that we can add keys to it later if we want to expand this function
     const gawOptions = {};
     gawOptions.apiKey = config?.gawDataApiKey || "";
+
+    const infoBarOptions = {};
+    infoBarOptions.target = config?.infoBar.target || "";
+    infoBarOptions.learnMoreLink = config?.infoBar.learnMoreLink || "#";
+    infoBarOptions.version = config?.infoBar.version || "latest";
 
     let newRequest = null;
     if (devMode) {
@@ -262,11 +269,12 @@ async function auto(request, env, ctx, config = {}) {
       });
     }
 
+    let rewriter = null;
+
     // We use a cookie to allow us to manually disable the grid-aware feature.
     // This is useful for testing purposes. It can also be used to disable the feature for specific users.
     const requestCookies = request.headers.get("cookie");
 
-    let rewriter = null;
     if (requestCookies && requestCookies.includes("gaw-manual-view")) {
       if (requestCookies.includes("gaw-manual-view=low")) {
         rewriter = htmlChanges.low;
@@ -276,19 +284,22 @@ async function auto(request, env, ctx, config = {}) {
         rewriter = htmlChanges.high;
       }
 
-      if (infoBarTarget.length > 0) {
-        rewriter.on("body", {
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
           element(element) {
             element.append(
-              '<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@latest"></script>',
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
               { html: true },
             );
           },
         });
 
-        rewriter.on(infoBarTarget, {
+        rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.replace(`<gaw-info-bar> </gaw-info-bar>`, { html: true });
+            element.replace(
+              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              { html: true },
+            );
           },
         });
       }
@@ -308,7 +319,30 @@ async function auto(request, env, ctx, config = {}) {
       if (debug === "full" || debug === "headers") {
         debugHeaders = { ...debugHeaders, "gaw-applied": "skip-cookie" };
       }
-      return new Response(response.body, {
+      //@ts-ignore
+      rewriter = new HTMLRewriter();
+
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
+          element(element) {
+            element.append(
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarOptions.target, {
+          element(element) {
+            element.replace(
+              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              { html: true },
+            );
+          },
+        });
+      }
+
+      return new Response(rewriter.transform(response.clone()).body, {
         ...response,
         headers: {
           ...response.headers,
@@ -490,20 +524,20 @@ async function auto(request, env, ctx, config = {}) {
     if (gridData.level === "low" && htmlChanges.low) {
       rewriter = htmlChanges.low;
 
-      if (infoBarTarget.length > 0) {
-        rewriter.on("body", {
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
           element(element) {
             element.append(
-              '<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@latest"></script>',
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
               { html: true },
             );
           },
         });
 
-        rewriter.on(infoBarTarget, {
+        rewriter.on(infoBarOptions.target, {
           element(element) {
             element.replace(
-              `<gaw-info-bar data-gaw-level="low" data-gaw-location="${gridData.region}"> </gaw-info-bar>`,
+              `<gaw-info-bar data-gaw-level="low" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
           },
@@ -511,20 +545,20 @@ async function auto(request, env, ctx, config = {}) {
       }
     } else if (gridData.level === "moderate" && htmlChanges.moderate) {
       rewriter = htmlChanges.moderate;
-      if (infoBarTarget.length > 0) {
-        rewriter.on("body", {
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
           element(element) {
             element.append(
-              '<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@latest"></script>',
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
               { html: true },
             );
           },
         });
 
-        rewriter.on(infoBarTarget, {
+        rewriter.on(infoBarOptions.target, {
           element(element) {
             element.replace(
-              `<gaw-info-bar data-gaw-level="moderate" data-gaw-location="${gridData.region}"> </gaw-info-bar>`,
+              `<gaw-info-bar data-gaw-level="moderate" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
           },
@@ -533,20 +567,20 @@ async function auto(request, env, ctx, config = {}) {
     } else if (gridData.level === "high" && htmlChanges.high) {
       rewriter = htmlChanges.high;
 
-      if (infoBarTarget.length > 0) {
-        rewriter.on("body", {
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
           element(element) {
             element.append(
-              '<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@latest"></script>',
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
               { html: true },
             );
           },
         });
 
-        rewriter.on(infoBarTarget, {
+        rewriter.on(infoBarOptions.target, {
           element(element) {
             element.replace(
-              `<gaw-info-bar data-gaw-level="high" data-gaw-location="${gridData.region}"> </gaw-info-bar>`,
+              `<gaw-info-bar data-gaw-level="high" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
           },
