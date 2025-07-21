@@ -304,7 +304,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.replace(
+            element.append(
               `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
@@ -342,7 +342,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.replace(
+            element.append(
               `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
@@ -389,7 +389,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.replace(
+            element.append(
               `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
@@ -593,7 +593,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.replace(
+            element.append(
               `<gaw-info-bar data-gaw-level="low" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
@@ -614,7 +614,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.replace(
+            element.append(
               `<gaw-info-bar data-gaw-level="moderate" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
@@ -636,7 +636,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.replace(
+            element.append(
               `<gaw-info-bar data-gaw-level="high" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
