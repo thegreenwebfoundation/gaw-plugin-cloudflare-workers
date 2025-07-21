@@ -30,64 +30,67 @@ This code will:
 
 The `gridAwareAuto` function also accepts an options object as the fourth parameter. This allows for some configuration to be made to the implementation. Accepted options values are:
 
-| Option                  | Type         | Default         | Possible values                                                                          | Description                                                                                                                                                            |
-| ----------------------- | ------------ | --------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `contentType`           | String[]     | `['text/html']` | Example: ['text/html', 'text/css']                                                       | Defines the content types that should be processed                                                                                                                     |
-| `ignoreRoutes`          | String[]     | `[]`            | Example: ['/wp-admin', '/assets/js']                                                     | A list of routes where grid-aware code should not be applied                                                                                                           |
-| `ignoreGawCookie`       | String       | `'gaw-ignore'`  | "gaw-ignore"                                                                             | A cookie that when present will result in grid-aware code being skipped                                                                                                |
-| `userOptIn`             | Boolean      | `false`         | true, false                                                                              | Allows developers to specify if users are required to opt-in to the grid-aware website experience                                                                      |
-| `locationType`          | String       | `'latlon'`      | "latlon", "country"                                                                      | Indicates the geolocation data to use for grid-aware checks                                                                                                            |
-| `htmlChanges`           | Object       | {}              | {"low": HTMLRewriter, "moderate": HTMLRewriter, "high": HTMLRewriter}                    | An object containing HTMLRewriter functions which are used to make adjustments to the page based on the relative grid intensity                                        |
-| `htmlChanges.low`       | HTMLRewriter | null            | A HTMLRewriter function which is applied to the page at low relative grid intensity      |
-| `htmlChanges.moderate`  | HTMLRewriter | null            | A HTMLRewriter function which is applied to the page at moderate relative grid intensity |
-| `htmlChanges.high`      | HTMLRewriter | null            | A HTMLRewriter function which is applied to the page at high relative grid intensity     |
-| `defaultView`           | String       | `null`          | null, "low", "moderate", "high"                                                          | Default view for the grid-aware website experience                                                                                                                     |
-| `gawDataApiKey`         | String       | `''`            | "xyz123"                                                                                 | A valid [Electricity Maps API](https://portal.electricitymaps.com/) key                                                                                                |
-| `infoBar`               | Object       | `{}`            | `{target: "", version: "latest", learnMoreLink: "#"}`                                    | Configuration for the grid-aware info bar element                                                                                                                      |
-| `infoBar.target`        | String       | `''`            | Example: "header", "#info-container"                                                     | CSS selector for the element where the [grid-aware info bar](https://github.com/thegreenwebfoundation/gaw-web-component) will be inserted                              |
-| `infoBar.version`       | String       | `'latest'`      | "latest", "1.0.0"                                                                        | Version of the info bar component to use                                                                                                                               |
-| `infoBar.learnMoreLink` | String       | `'#'`           | Example: "https://example.com/learn-more"                                                | Link to learn more about the grid-aware website                                                                                                                        |
-| `kvCacheData`           | Boolean      | `false`         | true, false                                                                              | Indicate if grid data from the API should be cached in Cloudflare Workers KV for one hour. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv)        |
-| `kvCachePage`           | Boolean      | `false`         | true, false                                                                              | Indicates if the modified grid-aware page should be cached in Cloudflare Workers KV for 24 hours. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv) |
-| `debug`                 | String       | "none"          | "none", "full", "headers", "logs"                                                        | Activates debug mode which outputs logs and returns additional response headers                                                                                        |
-| `dev`                   | Boolean      | `false`         | true, false                                                                              | Enables development mode, which redirects requests to a local development server                                                                                       |
-| `devConfig`             | Object       | `{}`            | `{hostname: "localhost", port: "8080", protocol: "http"}`                                | Configuration options for the development mode, including hostname, port, and protocol                                                                                 |
+| Option                  | Type         | Default         | Possible values                                                            | Description                                                                                                       |
+| ----------------------- | ------------ | --------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `contentType`           | String[]     | `['text/html']` | Example: ['text/html', 'text/css']                                         | Defines the content types that should be processed                                                                |
+| `ignoreRoutes`          | String[]     | `[]`            | Example: ['/wp-admin', '/assets/js']                                       | A list of routes where grid-aware code should not be applied                                                      |
+| `ignoreGawCookie`       | String       | `'gaw-ignore'`  | "gaw-ignore"                                                               | A cookie that when present will result in grid-aware code being skipped                                           |
+| `userOptIn`             | Boolean      | `false`         | true, false                                                                | Allows developers to specify if users are required to opt-in to the grid-aware website experience                 |
+| `locationType`          | String       | `'latlon'`      | "latlon", "country"                                                        | Type of location data to use                                                                                      |
+| `htmlChanges`           | Object       | {}              | {"low": HTMLRewriter, "moderate": HTMLRewriter, "high": HTMLRewriter}      | An object to capture the different HTML changes that are applied at each different grid intesity level            |
+| `htmlChanges.low`       | HTMLRewriter | null            | Custom HTMLRewriter for page modification at low grid intensity level      |
+| `htmlChanges.moderate`  | HTMLRewriter | null            | Custom HTMLRewriter for page modification at moderate grid intensity level |
+| `htmlChanges.high`      | HTMLRewriter | null            | Custom HTMLRewriter for page modification at high grid intensity level     |
+| `defaultView`           | String/null  | `null`          | null, "low", "moderate", "high"                                            | Default view for the grid-aware website experience                                                                |
+| `gawDataApiKey`         | String       | `''`            | "xyz123"                                                                   | API key for the data source                                                                                       |
+| `infoBar`               | Object       | `{}`            | `{target: "", version: "latest", learnMoreLink: "#", popoverText: ""}`     | Configuration for the info bar element                                                                            |
+| `infoBar.target`        | String       | `''`            | Example: "header", "#info-container"                                       | Target element for the info bar                                                                                   |
+| `infoBar.version`       | String       | `'latest'`      | "latest", "1.0.0"                                                          | Version of the info bar to use                                                                                    |
+| `infoBar.learnMoreLink` | String       | `'#'`           | Example: "https://example.com/learn-more"                                  | Link to learn more about the info bar                                                                             |
+| `infoBar.popoverText`   | String       | `''`            | Example: "This website adapts based on carbon intensity"                   | Provide a custom string of text to be used in the info bar popover element                                        |
+| `kvCacheData`           | Boolean      | `false`         | true, false                                                                | Whether to cache grid data in KV store. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv)      |
+| `kvCachePage`           | Boolean      | `false`         | true, false                                                                | Whether to cache modified pages in KV store. Read [setup instructions](#cache-grid-data-in-cloudflare-workers-kv) |
+| `debug`                 | String       | "none"          | "none", "full", "headers", "logs"                                          | Activates debug mode which outputs logs and returns additional response headers                                   |
+| `dev`                   | Boolean      | `false`         | true, false                                                                | Whether to enable development mode                                                                                |
+| `devConfig`             | Object       | `{}`            | `{hostname: "localhost", port: "8080", protocol: "http"}`                  | Configuration for development mode                                                                                |
 
 The following example will run on all HTML pages, but will skip any routes (URLs) that include the `/company/` or `/profile/` strings. It will use Electricity Maps as the data source, and uses an API key which has been set as an environment secret. IF grid-aware changes need to be applied to the page, a `data-grid-aware=true` attribute will be set on the HTML element.
 
 ```js
-import gridAwareAuto from '@greenweb/gaw-plugin-cloudflare-workers';
+import gridAwareAuto from "@greenweb/gaw-plugin-cloudflare-workers";
 
 export default {
- async fetch(request, env, ctx) {
-  return gridAwareAuto(request, env, ctx, {
-    // Ignore these routes
-    ignoreRoutes: ['/company/`, `/profile/`],
-    // Use this API key that has been saved as a secret
-    gawDataApiKey: env.EMAPS_API_KEY,
-    // Configure the grid-aware info bar
-    infoBar: {
-      target: "#gaw-info-bar",
-      learnMoreLink: "https://www.thegreenwebfoundation.org/tools/grid-aware-websites/",
-      version: "latest"
-    },
-    // Require users to opt-in to grid-aware experience
-    userOptIn: false,
-    // Set a default view (null means it will be based on actual grid intensity)
-    defaultView: null,
-    // Make these changes to the web page using HTMLRewriter when the grid intensity is high.
-    // All other states (low, moderate) will return the page as normal - no changes applied.
-    htmlChanges: {
-      high: new HTMLRewriter().on('html', {
-        element(element) {
-          element.setAttribute('data-grid-aware', 'true');
-        },
-      }),
-    }
-  });
- },
+  async fetch(request, env, ctx) {
+    return gridAwareAuto(request, env, ctx, {
+      // Ignore these routes
+      ignoreRoutes: ["/company/", "/profile/"],
+      // Use this API key that has been saved as a secret
+      gawDataApiKey: env.EMAPS_API_KEY,
+      // Configure the grid-aware info bar
+      infoBar: {
+        target: "#gaw-info-bar",
+        learnMoreLink:
+          "https://www.thegreenwebfoundation.org/tools/grid-aware-websites/",
+        version: "latest",
+        popoverText:
+          "This website adapts based on your local electricity grid's carbon intensity",
+      },
+      // Require users to opt-in to grid-aware experience
+      userOptIn: false,
+      // Set a default view (null means it will be based on actual grid intensity)
+      defaultView: null,
+      // Make these changes to the web page using HTMLRewriter when the grid intensity is high.
+      // All other states (low, moderate) will return the page as normal - no changes applied.
+      htmlChanges: {
+        high: new HTMLRewriter().on("html", {
+          element(element) {
+            element.setAttribute("data-grid-aware", "true");
+          },
+        }),
+      },
+    });
+  },
 };
-
 ```
 
 ### See this in the wild
