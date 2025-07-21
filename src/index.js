@@ -148,6 +148,7 @@ async function fetchDataFromKv(env, key) {
  * @param {string} [config.infoBar.target=''] - Target element for the info bar.
  * @param {string} [config.infoBar.version='latest'] - Version of the info bar to use.
  * @param {string} [config.infoBar.learnMoreLink='#'] - Link to learn more about the info bar.
+ * @param {string} [config.infoBar.popoverText=''] - Provide a custom string of text to be used in the info bar popover element.
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
  * @param {"none"|"full"|"headers"|"logs"} [config.debug="none"] - Activates debug mode which outputs logs and returns additional response headers.
@@ -196,6 +197,7 @@ async function auto(request, env, ctx, config = {}) {
     infoBarOptions.target = config?.infoBar.target || "";
     infoBarOptions.learnMoreLink = config?.infoBar.learnMoreLink || "#";
     infoBarOptions.version = config?.infoBar.version || "latest";
+    infoBarOptions.popoverText = config?.infoBar.popoverText || "";
 
     let newRequest = null;
     if (devMode) {
@@ -305,7 +307,7 @@ async function auto(request, env, ctx, config = {}) {
         rewriter.on(infoBarOptions.target, {
           element(element) {
             element.append(
-              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? infoBarOptions.popoverText : ""}> </gaw-info-bar>`,
               { html: true },
             );
           },
@@ -343,7 +345,7 @@ async function auto(request, env, ctx, config = {}) {
         rewriter.on(infoBarOptions.target, {
           element(element) {
             element.append(
-              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? infoBarOptions.popoverText : ""}> </gaw-info-bar>`,
               { html: true },
             );
           },
@@ -390,7 +392,7 @@ async function auto(request, env, ctx, config = {}) {
         rewriter.on(infoBarOptions.target, {
           element(element) {
             element.append(
-              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? infoBarOptions.popoverText : ""}> </gaw-info-bar>`,
               { html: true },
             );
           },
