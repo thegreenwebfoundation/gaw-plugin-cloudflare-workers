@@ -339,12 +339,32 @@ async function auto(request, env, ctx, config = {}) {
       });
     }
 
-    if (requestCookies && requestCookies.includes(ignoreGawCookie)) {
+    if (userOptIn && !requestCookies?.includes("gaw-user-opt-in=true")) {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { ...debugHeaders, "gaw-applied": "skip-cookie" };
+        debugHeaders = { ...debugHeaders, "gaw-applied": "user-opt-in" };
       }
-      //@ts-ignore
-      rewriter = new HTMLRewriter();
+
+      if (infoBarOptions.customViews.length > 0) {
+        infoBarOptions.customViews.split(",").map((view) => {
+          if (defaultView.toLowerCase() === view.trim().toLowerCase()) {
+            rewriter = htmlChanges[view.trim().toLowerCase()];
+          } else {
+            //@ts-ignore
+            rewriter = new HTMLRewriter();
+          }
+        });
+      } else {
+        if (defaultView === "low") {
+          rewriter = htmlChanges.low;
+        } else if (defaultView === "moderate") {
+          rewriter = htmlChanges.moderate;
+        } else if (defaultView === "high") {
+          rewriter = htmlChanges.high;
+        } else {
+          //@ts-ignore
+          rewriter = new HTMLRewriter();
+        }
+      }
 
       if (infoBarOptions.target.length > 0) {
         rewriter.on("head", {
@@ -372,26 +392,18 @@ async function auto(request, env, ctx, config = {}) {
           ...response.headers,
           "Content-Type": contentTypeHeader,
           "Content-Encoding": "gzip",
+          "Set-Cookie": "gaw-user-opt-in=false; path=/;",
           ...debugHeaders,
         },
       });
     }
 
-    if (userOptIn && !requestCookies?.includes("gaw-user-opt-in=true")) {
+    if (requestCookies && requestCookies.includes(ignoreGawCookie)) {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { ...debugHeaders, "gaw-applied": "user-opt-in" };
+        debugHeaders = { ...debugHeaders, "gaw-applied": "skip-cookie" };
       }
-
-      if (defaultView === "low") {
-        rewriter = htmlChanges.low;
-      } else if (defaultView === "moderate") {
-        rewriter = htmlChanges.moderate;
-      } else if (defaultView === "high") {
-        rewriter = htmlChanges.high;
-      } else {
-        //@ts-ignore
-        rewriter = new HTMLRewriter();
-      }
+      //@ts-ignore
+      rewriter = new HTMLRewriter();
 
       if (infoBarOptions.target.length > 0) {
         rewriter.on("head", {
@@ -406,7 +418,7 @@ async function auto(request, env, ctx, config = {}) {
         rewriter.on(infoBarOptions.target, {
           element(element) {
             element.append(
-              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? infoBarOptions.popoverText : ""}> </gaw-info-bar>`,
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-ignore-cookie=${ignoreGawCookie}> </gaw-info-bar>`,
               { html: true },
             );
           },
@@ -419,7 +431,6 @@ async function auto(request, env, ctx, config = {}) {
           ...response.headers,
           "Content-Type": contentTypeHeader,
           "Content-Encoding": "gzip",
-          "Set-Cookie": "gaw-user-opt-in=false; path=/;",
           ...debugHeaders,
         },
       });
