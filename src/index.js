@@ -149,6 +149,7 @@ async function fetchDataFromKv(env, key) {
  * @param {string} [config.infoBar.version='latest'] - Version of the info bar to use.
  * @param {string} [config.infoBar.learnMoreLink='#'] - Link to learn more about the info bar.
  * @param {string} [config.infoBar.popoverText=''] - Provide a custom string of text to be used in the info bar popover element.
+ * @param {string} [config.infoBar.customViews=''] - Custom views for the grid-aware website experience.
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
  * @param {"none"|"full"|"headers"|"logs"} [config.debug="none"] - Activates debug mode which outputs logs and returns additional response headers.
@@ -198,6 +199,7 @@ async function auto(request, env, ctx, config = {}) {
     infoBarOptions.learnMoreLink = config?.infoBar.learnMoreLink || "#";
     infoBarOptions.version = config?.infoBar.version || "latest";
     infoBarOptions.popoverText = config?.infoBar.popoverText || "";
+    infoBarOptions.customViews = config?.infoBar.customViews || "";
 
     let newRequest = null;
     if (devMode) {
@@ -286,12 +288,24 @@ async function auto(request, env, ctx, config = {}) {
     const requestCookies = request.headers.get("cookie");
 
     if (requestCookies && requestCookies.includes("gaw-manual-view")) {
-      if (requestCookies.includes("gaw-manual-view=low")) {
-        rewriter = htmlChanges.low;
-      } else if (requestCookies.includes("gaw-manual-view=moderate")) {
-        rewriter = htmlChanges.moderate;
-      } else if (requestCookies.includes("gaw-manual-view=high")) {
-        rewriter = htmlChanges.high;
+      if (infoBarOptions.customViews.length > 0) {
+        infoBarOptions.customViews.split(",").map((view) => {
+          if (
+            requestCookies.includes(
+              `gaw-manual-view=${view.trim().toLowerCase()}`,
+            )
+          ) {
+            rewriter = htmlChanges[view.trim().toLowerCase()];
+          }
+        });
+      } else {
+        if (requestCookies.includes("gaw-manual-view=low")) {
+          rewriter = htmlChanges.low;
+        } else if (requestCookies.includes("gaw-manual-view=moderate")) {
+          rewriter = htmlChanges.moderate;
+        } else if (requestCookies.includes("gaw-manual-view=high")) {
+          rewriter = htmlChanges.high;
+        }
       }
 
       if (infoBarOptions.target.length > 0) {
@@ -307,7 +321,7 @@ async function auto(request, env, ctx, config = {}) {
         rewriter.on(infoBarOptions.target, {
           element(element) {
             element.append(
-              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? infoBarOptions.popoverText : ""}> </gaw-info-bar>`,
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""}> </gaw-info-bar>`,
               { html: true },
             );
           },
@@ -345,7 +359,7 @@ async function auto(request, env, ctx, config = {}) {
         rewriter.on(infoBarOptions.target, {
           element(element) {
             element.append(
-              `<gaw-info-bar data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? infoBarOptions.popoverText : ""}> </gaw-info-bar>`,
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""}> </gaw-info-bar>`,
               { html: true },
             );
           },
@@ -596,7 +610,7 @@ async function auto(request, env, ctx, config = {}) {
         rewriter.on(infoBarOptions.target, {
           element(element) {
             element.append(
-              `<gaw-info-bar data-gaw-level="low" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-gaw-level="low" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
           },
@@ -617,7 +631,7 @@ async function auto(request, env, ctx, config = {}) {
         rewriter.on(infoBarOptions.target, {
           element(element) {
             element.append(
-              `<gaw-info-bar data-gaw-level="moderate" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-gaw-level="moderate" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
           },
@@ -639,7 +653,7 @@ async function auto(request, env, ctx, config = {}) {
         rewriter.on(infoBarOptions.target, {
           element(element) {
             element.append(
-              `<gaw-info-bar data-gaw-level="high" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-gaw-level="high" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
           },
