@@ -201,7 +201,7 @@ async function auto(request, env, ctx, config = {}) {
     infoBarOptions.popoverText = config?.infoBar.popoverText || "";
     infoBarOptions.customViews = config?.infoBar.customViews || "";
 
-    let newRequest = null;
+    let dev = null;
     if (devMode) {
       console.log("Dev mode enabled");
       const url = new URL(request.url);
@@ -209,12 +209,12 @@ async function auto(request, env, ctx, config = {}) {
       url.port = devConfig.port || "8080";
       url.protocol = devConfig.protocol || "http";
       // @ts-ignore
-      newRequest = new Request(url.toString(), request);
+      dev = new Request(url.toString(), request.clone());
     }
 
-    if (newRequest) {
+    if (dev) {
       // @ts-ignore
-      request = newRequest;
+      request = dev;
     }
 
     const url = request.url;
@@ -222,13 +222,13 @@ async function auto(request, env, ctx, config = {}) {
     // If the route we're working on is on the ignore list, bail out as well
     if (ignoreRoutes.some((route) => url.includes(route))) {
       // @ts-ignore
-      return fetch(request, {
+      return fetch(request.clone(), {
         redirect: "follow",
       });
     }
 
     //@ts-ignore
-    const response = await fetch(request, {
+    const response = await fetch(request.clone(), {
       redirect: "follow",
     });
 
@@ -720,7 +720,7 @@ async function auto(request, env, ctx, config = {}) {
     }
 
     // @ts-ignore
-    const errorResponse = await fetch(request, {
+    const errorResponse = await fetch(request.clone(), {
       redirect: "follow",
     });
     return new Response(errorResponse.body, {
