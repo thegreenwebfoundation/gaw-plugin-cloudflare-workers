@@ -1,6 +1,6 @@
 {
   "name": "@greenweb/gaw-plugin-cloudflare-workers",
-  "version": "0.5.4-0",
+  "version": "1.0.0",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
