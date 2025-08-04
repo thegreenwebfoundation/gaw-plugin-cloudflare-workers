@@ -52,6 +52,7 @@ export type cloudflareContext = import("./types").cloudflareContext;
  * @param {string} [config.infoBar.version='latest'] - Version of the info bar to use.
  * @param {string} [config.infoBar.learnMoreLink='#'] - Link to learn more about the info bar.
  * @param {string} [config.infoBar.popoverText=''] - Provide a custom string of text to be used in the info bar popover element.
+ * @param {string} [config.infoBar.customViews=''] - Custom views for the grid-aware website experience.
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
  * @param {"none"|"full"|"headers"|"logs"} [config.debug="none"] - Activates debug mode which outputs logs and returns additional response headers.
@@ -89,6 +90,7 @@ declare function auto(request: cloudflareRequest, env: cloudflareEnv, ctx: cloud
         version?: string;
         learnMoreLink?: string;
         popoverText?: string;
+        customViews?: string;
     };
     kvCacheData?: boolean;
     kvCachePage?: boolean;
