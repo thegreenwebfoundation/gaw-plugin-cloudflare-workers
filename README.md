@@ -8,7 +8,7 @@ The easiest way to use this plugin is by utilising the `gridAwareAuto` functiona
 
 Install this library in your project using `npm install @greenweb/gaw-plugin-cloudflare-workers`.
 
-> ![NOTE] To use this function you also need to have a valid [Electricity Maps API](https://portal.electricitymaps.com/) key with access to the [Carbon Aware Websites API](https://portal.electricitymaps.com/developer-hub/api/reference#latest-carbon-intensity-level). This function currently uses that API as the source of grid intensity data. The Carbon Aware Websites API is currently only available under a paid plan, but we are in conversation with Electricity Maps on ways to make this data available in some kind of free version. You can track the progress [in this issue](https://github.com/thegreenwebfoundation/grid-aware-websites/issues/21) and leave a comment if access to this data is also important to you.
+> ![NOTE] To use this function you also need to have a valid [Electricity Maps API](https://portal.electricitymaps.com/) key with access to the [Carbon Aware Websites API](https://portal.electricitymaps.com/developer-hub/api/reference#latest-carbon-intensity-level). This function currently uses that API as the source of grid intensity data. The Carbon Aware Websites API is currently only available under a paid plan, but we are in conversation with Electricity Maps on ways to make this data available in some kind of free version. You can track the progress and express your interest in this API [in this issue](https://github.com/thegreenwebfoundation/grid-aware-websites/issues/21).
 
 Replace your Cloudflare Worker with the following code.
 
@@ -97,8 +97,8 @@ export default {
 
 We use this function on our own Green Web Foundation Grid-aware Websites project page.
 
-- View [the page](https://www.thegreenwebfoundation.org/tools/grid-aware-websites/)
-- View [Cloudflare Workers source code](https://github.com/thegreenwebfoundation/gwf-gaw-cloudflare-worker/blob/main/src/index.js)
+- View [Grid-aware Websites project page](https://www.thegreenwebfoundation.org/tools/grid-aware-websites/) | [Cloudflare Workers source code](https://github.com/thegreenwebfoundation/gwf-gaw-cloudflare-worker/blob/main/src/index.js)
+- View [Branch website](https://branch.climateaction.tech/) | [Cloudflare Workers source code](https://github.com/thegreenwebfoundation/branch-gaw-worker)
 
 ---
 
