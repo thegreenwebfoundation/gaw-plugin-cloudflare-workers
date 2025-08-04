@@ -392,7 +392,7 @@ async function auto(request, env, ctx, config = {}) {
           ...response.headers,
           "Content-Type": contentTypeHeader,
           "Content-Encoding": "gzip",
-          "Set-Cookie": "gaw-user-opt-in=false; path=/;",
+          "Set-Cookie": "gaw-user-opt-in=false; path=/; SameSite=lax;",
           ...debugHeaders,
         },
       });
