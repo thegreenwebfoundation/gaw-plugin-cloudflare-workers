@@ -1,4 +1,4 @@
-import { PowerBreakdown, GridIntensity } from "@greenweb/grid-aware-websites";
+import { GridIntensity } from "@greenweb/grid-aware-websites";
 
 /**
  * Type definitions
@@ -136,28 +136,46 @@ async function fetchDataFromKv(env, key) {
  * @param {string[]} [config.contentType=['text/html']] - Content types to process.
  * @param {string[]} [config.ignoreRoutes=[]] - Routes to exclude from GAW processing.
  * @param {string} [config.ignoreGawCookie='gaw'] - Cookie name to disable GAW for specific users.
- * @param {"country"|"latlon"} [config.locationType='country'] - Type of location data to use.
- * @param {Object} [config.htmlChanges=null] - Custom HTML rewriter for page modifications.
- * @param {"electricity maps"} [config.gawDataSource='electricity maps'] - Data source for grid information.
- * @param {"power"|"carbon"} [config.gawDataType='power'] - Type of grid data to fetch ('power' or 'carbon').
+ * @param {boolean} [config.userOptIn=false] - Allows developers to specify if whether users are required to opt-in to the grid-aware website experience on their site.
+ * @param {"latlon"|"country"} [config.locationType='latlon'] - Type of location data to use.
+ * @param {Object} [config.htmlChanges=null] - An object to capture the different HTML changes that are applied at each different grid intesity level.
+ * @param {Object} [config.htmlChanges.low=null] - Custom HTMLRewriter for page modification at low grid intensity level.
+ * @param {Object} [config.htmlChanges.moderate=null] - Custom HTMLRewriter for page modification at moderate grid intensity level.
+ * @param {Object} [config.htmlChanges.high=null] - Custom HTMLRewriter for page modification at high grid intensity level.
+ * @param {null|'low'|'moderate'|'high'} [config.defaultView=null] - Default view for the grid-aware website experience.
  * @param {string} [config.gawDataApiKey=''] - API key for the data source.
+ * @param {Object} [config.infoBar={}] - Configuration for the info bar element.
+ * @param {string} [config.infoBar.target=''] - Target element for the info bar.
+ * @param {string} [config.infoBar.version='latest'] - Version of the info bar to use.
+ * @param {string} [config.infoBar.learnMoreLink='#'] - Link to learn more about the info bar.
+ * @param {string} [config.infoBar.popoverText=''] - Provide a custom string of text to be used in the info bar popover element.
+ * @param {string} [config.infoBar.customViews=''] - Custom views for the grid-aware website experience.
  * @param {boolean} [config.kvCacheData=false] - Whether to cache grid data in KV store.
  * @param {boolean} [config.kvCachePage=false] - Whether to cache modified pages in KV store.
  * @param {"none"|"full"|"headers"|"logs"} [config.debug="none"] - Activates debug mode which outputs logs and returns additional response headers.
+ * @param {boolean} [config.dev=false] - Whether to enable development mode.
+ * @param {Object} [config.devConfig=null] - Configuration for development mode.
+ * @param {string} [config.devConfig.hostname=''] - Hostname for development mode.
+ * @param {string} [config.devConfig.port=''] - Port for development mode.
+ * @param {string} [config.devConfig.protocol=''] - Protocol for development mode.
  * @returns {Promise<Response>} A modified or unmodified response based on grid data and configuration.
  * @example
  * // Basic usage in a Cloudflare Worker
  * export default {
  *   async fetch(request, env, ctx) {
  *     return auto(request, env, ctx, {
- *       gawOptions: {
- *         apiKey: 'your-api-key'
- *       }
+ *         gawDataApiKey: 'your-api-key'
  *     });
  *   }
  * };
  */
 async function auto(request, env, ctx, config = {}) {
+  // Only run function on GET requests
+  if (request.method !== "GET") {
+    //@ts-ignore
+    return fetch(request);
+  }
+
   const debug = config?.debug || "none";
   let debugHeaders = {};
 
@@ -165,41 +183,62 @@ async function auto(request, env, ctx, config = {}) {
     const contentType = config?.contentType || ["text/html"];
     const ignoreRoutes = config?.ignoreRoutes || [];
     const ignoreGawCookie = config?.ignoreGawCookie || "gaw-ignore";
-    const htmlChanges = config?.htmlChanges || null;
+    const htmlChanges = config?.htmlChanges || {};
+    const locationType = config.locationType || "latlon";
+    const devMode = config.dev || false;
+    const devConfig = config.devConfig || {};
+    const userOptIn = config.userOptIn || false;
+    const defaultView = config.defaultView || null;
+
+    // We set this as an options object so that we can add keys to it later if we want to expand this function
     const gawOptions = {};
-    gawOptions.source =
-      config?.gawDataSource?.toLowerCase() || "electricity maps";
-    gawOptions.type = config?.gawDataType?.toLowerCase() || "power";
-
-    if (gawOptions.type === "power") {
-      gawOptions.mode = "renewable";
-    } else if (gawOptions.type === "carbon") {
-      gawOptions.mode = "average";
-    }
-
     gawOptions.apiKey = config?.gawDataApiKey || "";
 
-    // This would be used inside a Cloudflare worker, so we expect the request and evn to be available.
+    const infoBarOptions = {};
+    infoBarOptions.target = config?.infoBar.target || "";
+    infoBarOptions.learnMoreLink = config?.infoBar.learnMoreLink || "#";
+    infoBarOptions.version = config?.infoBar.version || "latest";
+    infoBarOptions.popoverText = config?.infoBar.popoverText || "";
+    infoBarOptions.customViews = config?.infoBar.customViews || "";
+
+    let dev = null;
+    if (devMode) {
+      console.log("Dev mode enabled");
+      const url = new URL(request.url);
+      url.hostname = devConfig.hostname || "localhost";
+      url.port = devConfig.port || "8080";
+      url.protocol = devConfig.protocol || "http";
+      // @ts-ignore
+      dev = new Request(url.toString(), request.clone());
+    }
+
+    if (dev) {
+      // @ts-ignore
+      request = dev;
+    }
+
     const url = request.url;
 
     // If the route we're working on is on the ignore list, bail out as well
-    ignoreRoutes.forEach((route) => {
-      if (url.includes(route)) {
-        // @ts-ignore
-        return fetch(request);
-      }
+    if (ignoreRoutes.some((route) => url.includes(route))) {
+      // @ts-ignore
+      return fetch(request.clone(), {
+        redirect: "follow",
+      });
+    }
+
+    //@ts-ignore
+    const response = await fetch(request.clone(), {
+      redirect: "follow",
     });
 
-    const response = await fetch(request.url);
     const contentTypeHeader = response.headers.get("content-type");
-
-    // console.log({config, gawOptions})
 
     // Then check if the request content type is HTML.
     // If the content is not HTML, then return the response without any changes.
     if (!contentTypeHeader) {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { "gaw-applied": "no-content-type" };
+        debugHeaders = { ...debugHeaders, "gaw-applied": "no-content-type" };
       }
       return new Response(response.body, {
         ...response,
@@ -216,8 +255,6 @@ async function auto(request, env, ctx, config = {}) {
       contentTypeHeader.toLowerCase().includes(type.toLowerCase()),
     );
 
-    // console.log(url, 'Content type header', contentTypeHeader, contentType, 'isContentTypeValid', isContentTypeValid);
-
     if (!isContentTypeValid) {
       if (debug === "full" || debug === "logs") {
         // If none of the content types match, return the response without changes.
@@ -230,7 +267,7 @@ async function auto(request, env, ctx, config = {}) {
       }
 
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { "gaw-applied": "skip-content-type" };
+        debugHeaders = { ...debugHeaders, "gaw-applied": "skip-content-type" };
       }
 
       return new Response(response.body, {
@@ -244,17 +281,155 @@ async function auto(request, env, ctx, config = {}) {
       });
     }
 
+    let rewriter = null;
+
     // We use a cookie to allow us to manually disable the grid-aware feature.
     // This is useful for testing purposes. It can also be used to disable the feature for specific users.
     const requestCookies = request.headers.get("cookie");
-    if (requestCookies && requestCookies.includes(ignoreGawCookie)) {
-      if (debug === "full" || debug === "headers") {
-        debugHeaders = { "gaw-applied": "skip-cookie" };
+
+    if (requestCookies && requestCookies.includes("gaw-manual-view")) {
+      if (infoBarOptions.customViews.length > 0) {
+        infoBarOptions.customViews.split(",").map((view) => {
+          if (
+            requestCookies.includes(
+              `gaw-manual-view=${view.trim().toLowerCase()}`,
+            )
+          ) {
+            rewriter = htmlChanges[view.trim().toLowerCase()];
+          }
+        });
+      } else {
+        if (requestCookies.includes("gaw-manual-view=low")) {
+          rewriter = htmlChanges.low;
+        } else if (requestCookies.includes("gaw-manual-view=moderate")) {
+          rewriter = htmlChanges.moderate;
+        } else if (requestCookies.includes("gaw-manual-view=high")) {
+          rewriter = htmlChanges.high;
+        }
       }
-      return new Response(response.body, {
+
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
+          element(element) {
+            element.append(
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarOptions.target, {
+          element(element) {
+            element.append(
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""}> </gaw-info-bar>`,
+              { html: true },
+            );
+          },
+        });
+      }
+
+      return new Response(rewriter.transform(response.clone()).body, {
         ...response,
         headers: {
           ...response.headers,
+          "Content-Type": contentTypeHeader,
+          "Content-Encoding": "gzip",
+          ...debugHeaders,
+        },
+      });
+    }
+
+    if (userOptIn && !requestCookies?.includes("gaw-user-opt-in=true")) {
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { ...debugHeaders, "gaw-applied": "user-opt-in" };
+      }
+
+      if (infoBarOptions.customViews.length > 0) {
+        infoBarOptions.customViews.split(",").map((view) => {
+          if (defaultView.toLowerCase() === view.trim().toLowerCase()) {
+            rewriter = htmlChanges[view.trim().toLowerCase()];
+          } else {
+            //@ts-ignore
+            rewriter = new HTMLRewriter();
+          }
+        });
+      } else {
+        if (defaultView === "low") {
+          rewriter = htmlChanges.low;
+        } else if (defaultView === "moderate") {
+          rewriter = htmlChanges.moderate;
+        } else if (defaultView === "high") {
+          rewriter = htmlChanges.high;
+        } else {
+          //@ts-ignore
+          rewriter = new HTMLRewriter();
+        }
+      }
+
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
+          element(element) {
+            element.append(
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarOptions.target, {
+          element(element) {
+            element.append(
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""}> </gaw-info-bar>`,
+              { html: true },
+            );
+          },
+        });
+      }
+
+      return new Response(rewriter.transform(response.clone()).body, {
+        ...response,
+        headers: {
+          ...response.headers,
+          "Content-Type": contentTypeHeader,
+          "Content-Encoding": "gzip",
+          "Set-Cookie": "gaw-user-opt-in=false; path=/; SameSite=lax;",
+          ...debugHeaders,
+        },
+      });
+    }
+
+    if (requestCookies && requestCookies.includes(ignoreGawCookie)) {
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { ...debugHeaders, "gaw-applied": "skip-cookie" };
+      }
+      //@ts-ignore
+      rewriter = new HTMLRewriter();
+
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
+          element(element) {
+            element.append(
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarOptions.target, {
+          element(element) {
+            element.append(
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-ignore-cookie=${ignoreGawCookie}> </gaw-info-bar>`,
+              { html: true },
+            );
+          },
+        });
+      }
+
+      return new Response(rewriter.transform(response.clone()).body, {
+        ...response,
+        headers: {
+          ...response.headers,
+          "Content-Type": contentTypeHeader,
           "Content-Encoding": "gzip",
           ...debugHeaders,
         },
@@ -262,13 +437,20 @@ async function auto(request, env, ctx, config = {}) {
     }
 
     // Get the location of the user
-    const location = await getLocation(request);
-    const { country } = location;
+    const location = await getLocation(request, {
+      mode: locationType,
+    });
+
+    const { lat, lon, country } = location;
 
     // If the country data does not exist, then return the response without any changes.
-    if (!country) {
+    if (!country && (!lat || !lon)) {
       if (debug === "full" || debug === "headers") {
-        debugHeaders = { "gaw-applied": "no-cf-country" };
+        debugHeaders = { ...debugHeaders, "gaw-applied": "no-location-found" };
+      }
+
+      if (debug === "full" || debug === "logs") {
+        console.log("No location found.");
       }
       return new Response(response.body, {
         ...response,
@@ -280,140 +462,251 @@ async function auto(request, env, ctx, config = {}) {
       });
     }
 
-    let gridData = null;
-
-    if (config?.kvCacheData) {
-      // Check if we have have cached grid data for the country
-      gridData = await fetchDataFromKv(env, country);
+    if (lat && lon) {
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = {
+          ...debugHeaders,
+          "gaw-location": `lat: ${lat}, lon: ${lon}`,
+        };
+      }
 
       if (debug === "full" || debug === "logs") {
-        console.log("Using data from KV");
+        console.log(`Location: lat: ${lat}, lon: ${lon}`);
+      }
+    } else {
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { ...debugHeaders, "gaw-location": `${country}` };
+      }
+
+      if (debug === "full" || debug === "logs") {
+        console.log(`Location: ${country}`);
+      }
+    }
+
+    let gridData = {};
+
+    if (config?.kvCacheData) {
+      let cachedData = "";
+      // Check if we have have cached grid data for the country
+      if (lat && lon) {
+        cachedData = await fetchDataFromKv(env, `${lat}_${lon}`);
+      } else {
+        cachedData = await fetchDataFromKv(env, country);
+      }
+
+      try {
+        gridData = JSON.parse(cachedData);
+      } catch {
+        console.log("Error parsing KV data");
+      }
+
+      if (gridData?.status) {
+        if (debug === "full" || debug === "logs") {
+          console.log("Using data from KV");
+        }
+
+        if (debug === "full" || debug === "headers") {
+          debugHeaders = { ...debugHeaders, "gaw-data-source": "workers-kv" };
+        }
       }
     }
 
     // If no cached data, fetch it using the PowerBreakdown class
-    if (!gridData) {
+    if (!gridData?.status) {
       if (debug === "full" || debug === "logs") {
         console.log("Using data from API");
       }
 
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { ...debugHeaders, "gaw-data-source": "api" };
+      }
+
       const options = {
-        mode: gawOptions.mode,
+        mode: "level",
         apiKey: env.EMAPS_API_KEY || gawOptions.apiKey,
       };
 
-      // console.log(options);
+      const gridIntensity = new GridIntensity(options);
+      if (lat && lon) {
+        gridData = await gridIntensity.check({ lat, lon });
+      } else {
+        gridData = await gridIntensity.check(country);
+      }
 
-      if (gawOptions.source === "electricity maps") {
-        if (gawOptions.type === "power") {
-          const powerBreakdown = new PowerBreakdown(options);
-          // console.log('PowerBreakdown', powerBreakdown);
-          gridData = await powerBreakdown.check(country);
-        } else if (gawOptions.type === "carbon") {
-          const gridIntensity = new GridIntensity(options);
-          gridData = await gridIntensity.check(country);
+      // If there's an error getting data, return the web page without any modifications
+      if (gridData && "status" in gridData && gridData.status === "error") {
+        if (debug === "full" || debug === "headers") {
+          debugHeaders = { ...debugHeaders, "gaw-applied": "error-grid-data" };
         }
 
-        // If there's an error getting data, return the web page without any modifications
-        if (gridData?.status === "error") {
-          if (debug === "full" || debug === "headers") {
-            debugHeaders = { "gaw-applied": "error-grid-data" };
-          }
-
-          if (debug === "full" || debug === "logs") {
-            console.log("Error getting grid data", gridData);
-          }
-
-          return new Response(response.body, {
-            ...response,
-            headers: {
-              ...response.headers,
-              "Content-Encoding": "gzip",
-              ...debugHeaders,
-            },
-          });
+        if (debug === "full" || debug === "logs") {
+          console.log("Error getting grid data", gridData);
         }
+
+        return new Response(response.body, {
+          ...response,
+          headers: {
+            ...response.headers,
+            "Content-Encoding": "gzip",
+            ...debugHeaders,
+          },
+        });
       }
 
       if (config?.kvCacheData) {
         // Save the fresh data to KV for future use.
         // By default data is stored for 1 hour.
-        await saveDataToKv(env, country, JSON.stringify(gridData));
-      }
-    } else {
-      // Otherwise we're using cached data, so let's parse that
-      gridData = await JSON.parse(gridData);
-    }
-
-    // If the grid aware flag is triggered (gridAware === true), then we'll return a modified HTML page to the user.
-    if (gridData.gridAware) {
-      if (debug === "full" || debug === "headers") {
-        debugHeaders = {
-          "gaw-applied": "auto",
-          "gaw-grid-data": JSON.stringify(gridData),
-          "gaw-location": JSON.stringify(location),
-        };
-      }
-
-      if (config?.kvCachePage) {
-        // First, check if we've already got a cached response for the request URL. We do this using the Cloudflare Workers plugin.
-        const cachedResponse = await fetchPageFromKv(env, request.url);
-        // If there's a cached response, return it with the additional headers.
-        if (debug === "full" || debug === "logs") {
-          console.log("Using cached page from KV");
+        if (lat && lon) {
+          await saveDataToKv(env, `${lat}_${lon}`, JSON.stringify(gridData));
+          console.log("saved latlon to kv");
+        } else if (country) {
+          await saveDataToKv(env, `${country}`, JSON.stringify(gridData));
+          console.log("saved country to kv");
         }
-
-        if (cachedResponse) {
-          return new Response(cachedResponse, {
-            ...response,
-            headers: {
-              ...response.headers,
-              "Content-Encoding": "gzip",
-              "Content-Type": contentTypeHeader,
-              ...debugHeaders,
-            },
-          });
-        }
-      }
-
-      // If there's no cached response, we'll modify the HTML page.
-      let rewriter = null;
-      if (htmlChanges) {
-        rewriter = htmlChanges;
-      }
-
-      if (rewriter) {
-        if (debug === "full" || debug === "logs") {
-          console.log("Using HTMLRewriter");
-        }
-
-        const gawResponse = new Response(
-          rewriter.transform(response.clone()).body,
-          {
-            ...response,
-            headers: {
-              ...response.headers,
-              "Content-Type": contentTypeHeader,
-              "Content-Encoding": "gzip",
-              ...debugHeaders,
-            },
-          },
-        );
-
-        if (config?.kvCachePage) {
-          // Store the modified response in the KV for 24 hours
-          // We'll use the Cloudflare Workers plugin to perform this action. The plugin sets an expirationTtl of 24 hours by default, but this can be changed
-          await savePageToKv(env, request.url, gawResponse.clone());
-
-          return gawResponse;
-        }
-
-        return gawResponse;
       }
     }
 
     if (debug === "full" || debug === "headers") {
-      debugHeaders = { "gaw-applied": "no-grid-aware" };
+      debugHeaders = {
+        ...debugHeaders,
+        "gaw-applied": "auto",
+        "gaw-grid-data": JSON.stringify(gridData),
+        "gaw-location": JSON.stringify(location),
+      };
+    }
+
+    if (config?.kvCachePage) {
+      // First, check if we've already got a cached response for the request URL. We do this using the Cloudflare Workers plugin.
+      const cachedResponse = await fetchPageFromKv(
+        env,
+        `${gridData.level}_${request.url}`,
+      );
+      // If there's a cached response, return it with the additional headers.
+      if (debug === "full" || debug === "logs") {
+        console.log("Using cached page from KV");
+      }
+
+      if (debug === "full" || debug === "headers") {
+        debugHeaders = { ...debugHeaders, "gaw-page-source": "workers kv" };
+      }
+
+      if (cachedResponse) {
+        return new Response(cachedResponse, {
+          ...response,
+          headers: {
+            ...response.headers,
+            "Content-Encoding": "gzip",
+            "Content-Type": contentTypeHeader,
+            ...debugHeaders,
+          },
+        });
+      }
+    }
+
+    // If there's no cached response, we'll modify the HTML page.
+
+    if (gridData.level === "low" && htmlChanges.low) {
+      rewriter = htmlChanges.low;
+
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
+          element(element) {
+            element.append(
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarOptions.target, {
+          element(element) {
+            element.append(
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-gaw-level="low" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              { html: true },
+            );
+          },
+        });
+      }
+    } else if (gridData.level === "moderate" && htmlChanges.moderate) {
+      rewriter = htmlChanges.moderate;
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
+          element(element) {
+            element.append(
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarOptions.target, {
+          element(element) {
+            element.append(
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-gaw-level="moderate" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              { html: true },
+            );
+          },
+        });
+      }
+    } else if (gridData.level === "high" && htmlChanges.high) {
+      rewriter = htmlChanges.high;
+
+      if (infoBarOptions.target.length > 0) {
+        rewriter.on("head", {
+          element(element) {
+            element.append(
+              `<script type="module" src="https://esm.sh/@greenweb/gaw-info-bar@${infoBarOptions.version}"></script>`,
+              { html: true },
+            );
+          },
+        });
+
+        rewriter.on(infoBarOptions.target, {
+          element(element) {
+            element.append(
+              `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-gaw-level="high" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
+              { html: true },
+            );
+          },
+        });
+      }
+    }
+
+    if (rewriter) {
+      if (debug === "full" || debug === "logs") {
+        console.log("Using HTMLRewriter");
+      }
+
+      const gawResponse = new Response(
+        rewriter.transform(response.clone()).body,
+        {
+          ...response,
+          headers: {
+            ...response.headers,
+            "Content-Type": contentTypeHeader,
+            "Content-Encoding": "gzip",
+            ...debugHeaders,
+          },
+        },
+      );
+
+      if (config?.kvCachePage) {
+        // Store the modified response in the KV for 24 hours
+        // We'll use the Cloudflare Workers plugin to perform this action. The plugin sets an expirationTtl of 24 hours by default, but this can be changed
+        await savePageToKv(
+          env,
+          `${gridData.level}_${request.url}`,
+          gawResponse.clone(),
+        );
+
+        return gawResponse;
+      }
+
+      return gawResponse;
+    }
+
+    if (debug === "full" || debug === "headers") {
+      debugHeaders = { ...debugHeaders, "gaw-applied": "no-grid-aware" };
     }
 
     // If the gridAware value is set to false, then return the response as is.
@@ -430,11 +723,17 @@ async function auto(request, env, ctx, config = {}) {
     // If there's an error getting data, return the web page without any modifications
     // console.log('Error getting grid data', e);
     if (debug === "full" || debug === "headers") {
-      debugHeaders = { "gaw-applied": "error-failed" };
+      debugHeaders = {
+        ...debugHeaders,
+        ...debugHeaders,
+        "gaw-applied": "error-failed",
+      };
     }
 
     // @ts-ignore
-    const errorResponse = await fetch(request);
+    const errorResponse = await fetch(request.clone(), {
+      redirect: "follow",
+    });
     return new Response(errorResponse.body, {
       ...errorResponse,
       headers: {

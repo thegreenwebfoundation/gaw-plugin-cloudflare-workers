@@ -1,6 +1,6 @@
 {
   "name": "@greenweb/gaw-plugin-cloudflare-workers",
-  "version": "0.3.1",
+  "version": "0.5.4-0",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
@@ -38,20 +38,20 @@
   "license": "Apache-2.0",
   "description": "This plugin provides some useful functions that can be used when setting up the Grid-aware Websites library using Cloudflare Workers",
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250509.0",
-    "@eslint/js": "^9.26.0",
-    "@types/node": "^22.15.17",
-    "@typescript-eslint/eslint-plugin": "^8.32.0",
-    "@typescript-eslint/parser": "^8.32.0",
-    "eslint": "^9.26.0",
+    "@cloudflare/workers-types": "^4.20250531.0",
+    "@eslint/js": "^9.28.0",
+    "@types/node": "^22.15.29",
+    "@typescript-eslint/eslint-plugin": "^8.33.0",
+    "@typescript-eslint/parser": "^8.33.0",
+    "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.5",
-    "globals": "^16.1.0",
+    "globals": "^16.2.0",
     "prettier": "3.5.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.3"
+    "vitest": "^3.1.4"
   },
   "dependencies": {
-    "@greenweb/grid-aware-websites": "^0.3.0"
+    "@greenweb/grid-aware-websites": "^1.0.0"
   }
 }

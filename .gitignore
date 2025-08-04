@@ -22,6 +22,7 @@ pids/
 
 # IDEs and editors
 .vscode/
+.zed/
 
 # Build directories
 dist/
