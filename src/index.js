@@ -320,7 +320,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.append(
+            element.setInnerContent(
               `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""}> </gaw-info-bar>`,
               { html: true },
             );
@@ -378,7 +378,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.append(
+            element.setInnerContent(
               `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""}> </gaw-info-bar>`,
               { html: true },
             );
@@ -417,7 +417,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.append(
+            element.setInnerContent(
               `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-ignore-cookie=${ignoreGawCookie}> </gaw-info-bar>`,
               { html: true },
             );
@@ -620,7 +620,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.append(
+            element.setInnerContent(
               `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-gaw-level="low" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
@@ -641,7 +641,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.append(
+            element.setInnerContent(
               `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-gaw-level="moderate" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
@@ -663,7 +663,7 @@ async function auto(request, env, ctx, config = {}) {
 
         rewriter.on(infoBarOptions.target, {
           element(element) {
-            element.append(
+            element.setInnerContent(
               `<gaw-info-bar ${infoBarOptions.customViews.length > 0 ? `data-views="${infoBarOptions.customViews}"` : ""} ${defaultView ? `data-default-view="${defaultView}"` : ""} data-learn-more-link=${infoBarOptions.learnMoreLink} ${infoBarOptions.popoverText.length > 0 ? `data-popover-text=${infoBarOptions.popoverText}` : ""} data-gaw-level="high" data-gaw-location="${gridData.region}" data-learn-more-link=${infoBarOptions.learnMoreLink}> </gaw-info-bar>`,
               { html: true },
             );
